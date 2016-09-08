@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Rebo</string>
+    <string name="tabbar_light">光控</string>
+    <string name="tabbar_music">音乐</string>
+</resources>

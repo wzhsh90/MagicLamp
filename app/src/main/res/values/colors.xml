@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#E54B4C</color>
+    <color name="colorPrimaryDark">#E54B4C</color>
+    <color name="colorAccent">#E54B4C</color>
+
+    <!--底部菜单-->
+    <color name="transparent">#00000000 </color>
+    <color name="white">#FFFFFF</color>
+    <color name="topbar_bg">#E54B4C</color>
+    <color name="tab_bg">#f9f9f9</color>
+    <color name="tab_text_bg">#bababa</color>
+    <color name="line_bg">#f0f0f0</color>
+
+
+</resources>
