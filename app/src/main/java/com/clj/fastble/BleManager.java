@@ -263,7 +263,7 @@ public class BleManager {
      * (与 scanSpecifiedDevicePeriod方法 配合使用)
      */
     private void connect(BluetoothDevice device, BleGattCallback callback) {
-        bleBluetooth.connect(device, true, callback);
+        bleBluetooth.connect(device, false, callback);
     }
 
     /**

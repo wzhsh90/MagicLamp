@@ -3,7 +3,6 @@ package com.rebo.bulb.activity;
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
@@ -23,7 +22,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.clj.fastble.BleManager;
-import com.clj.fastble.bluetooth.BleGattCallback;
 import com.clj.fastble.conn.BleCharacterCallback;
 import com.clj.fastble.exception.BleException;
 import com.clj.fastble.scan.ListScanCallback;
@@ -74,7 +72,7 @@ public class MainActivity extends BaseActivity {
         @Override
         public void onScanTimeout() {
             super.onScanTimeout();
-            EventBusUtil.postEvent(AppConst.BLUE_STOP_SCAN,"");
+            EventBusUtil.postEvent(AppConst.BLUE_STOP_SCAN, "");
             Log.i(TAG, "搜索时间结束");
         }
 
@@ -94,6 +92,7 @@ public class MainActivity extends BaseActivity {
         initBluetooth();
         spinAnimation();
     }
+
     private void spinAnimation() {
         //专辑旋转动画
         operatingAnim = AnimationUtils.loadAnimation(this, R.anim.anim_rotate);
@@ -118,7 +117,7 @@ public class MainActivity extends BaseActivity {
                         bleConnFail(jsonObject.getString("content"));
                         break;
                     case AppConst.BLUE_STOP_SCAN:
-                       stopScanAnim();
+                        stopScanAnim();
                         break;
                 }
             } catch (JSONException e) {
@@ -159,8 +158,9 @@ public class MainActivity extends BaseActivity {
             deviceListAdapter.notifyDataSetChanged();
         }
     }
-    private void bleConnFail(String errMsg){
-        Toast.makeText(MainActivity.this,errMsg, Toast.LENGTH_LONG).show();
+
+    private void bleConnFail(String errMsg) {
+        Toast.makeText(MainActivity.this, errMsg, Toast.LENGTH_LONG).show();
     }
 
     private void notifyChar() {
@@ -186,33 +186,12 @@ public class MainActivity extends BaseActivity {
         stopScan();
         bleManager.closeBluetoothGatt();
         Toast.makeText(MainActivity.this, "正在连接...", Toast.LENGTH_SHORT).show();
-        bleManager.connectDevice(device, new BleGattCallback() {
-            @Override
-            public void onConnectSuccess(BluetoothGatt gatt, int status) {
-                Log.i(TAG, "连接成功！");
-                gatt.discoverServices();
-                Intent intent = new Intent(MainActivity.this, DeviceDetailActivity.class);
-                Bundle bundle = new Bundle();
-                bundle.putParcelable("device", device);
-                intent.putExtras(bundle);
-                MainActivity.this.startActivity(intent);
-            }
-
-            @Override
-            public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-                Log.i(TAG, "服务被发现！");
-            }
-
-            @Override
-            public void onConnectFailure(BleException exception) {
-                Log.i(TAG, "连接失败或连接中断：" + '\n' + exception.toString());
-                EventBusUtil.postEvent(AppConst.BLUE_CONN_FAIL,"连接失败或连接中断");
-//                Toast.makeText(MainActivity.this, "连接失败或连接中断", Toast.LENGTH_LONG).show();
-//              bleManager.handleException(exception);
-            }
-        });
+        Intent intent = new Intent(MainActivity.this, DeviceDetailActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("device", device);
+        intent.putExtras(bundle);
+        MainActivity.this.startActivity(intent);
     }
-
     private final class OnItemClickListener implements AdapterView.OnItemClickListener {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {

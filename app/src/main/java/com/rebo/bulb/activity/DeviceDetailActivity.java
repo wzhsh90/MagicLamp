@@ -1,6 +1,8 @@
 package com.rebo.bulb.activity;
 
 import android.Manifest;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -12,6 +14,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,12 +25,16 @@ import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.Toast;
 
+import com.clj.fastble.bluetooth.BleGattCallback;
+import com.clj.fastble.exception.BleException;
+import com.rebo.bulb.AppConst;
 import com.rebo.bulb.BaseApplication;
 import com.rebo.bulb.R;
 import com.rebo.bulb.adapter.MusicListAdapter;
 import com.rebo.bulb.fragment.LightFragment;
 import com.rebo.bulb.fragment.MusicFragment;
 import com.rebo.bulb.model.MusicModel;
+import com.rebo.bulb.utils.EventBusUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,8 +59,9 @@ public class DeviceDetailActivity extends BaseActivity {
     private final static int TAB_MUSIC = 1;
     private final static int TAB_LIGHT = 0;
     private static final int RECORD_AUDIO_REQUEST_CODE = 976;
+    private static final String TAG = "magic_ble";
 
-    //    private BluetoothDevice device;
+    private BluetoothDevice device;
     BottomSheetDialog dialog;
 
     @Override
@@ -63,10 +71,28 @@ public class DeviceDetailActivity extends BaseActivity {
         this.setNavigationTitle("设备名称");
         setSelect(TAB_MUSIC);
         setSelect(TAB_LIGHT);
-//        Bundle bundle = getIntent().getExtras();
-//        device = (BluetoothDevice) bundle.get("device");
+        Bundle bundle = getIntent().getExtras();
+        device = (BluetoothDevice) bundle.get("device");
+        connectToDevice(device);
     }
-
+    private void connectToDevice(final BluetoothDevice device) {
+        BaseApplication.getBleManager().connectDevice(device, new BleGattCallback() {
+            @Override
+            public void onConnectSuccess(BluetoothGatt gatt, int status) {
+                gatt.discoverServices();
+            }
+            @Override
+            public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+                Log.i(TAG, "服务被发现！");
+            }
+            @Override
+            public void onConnectFailure(BleException exception) {
+                Log.i(TAG, "连接失败或连接中断：" + '\n' + exception.toString());
+                EventBusUtil.postEvent(AppConst.BLUE_CONN_FAIL,"连接失败或连接中断");
+                finish();
+            }
+        });
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         if (selectedIndex == 1) {
@@ -83,6 +109,7 @@ public class DeviceDetailActivity extends BaseActivity {
         }
         return res;
     }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -123,7 +150,7 @@ public class DeviceDetailActivity extends BaseActivity {
                 if (ContextCompat.checkSelfPermission(DeviceDetailActivity.this, Manifest.permission.RECORD_AUDIO)
                         == PackageManager.PERMISSION_GRANTED) {
                     setSelect(TAB_MUSIC);
-                }else{
+                } else {
                     Toast.makeText(DeviceDetailActivity.this, "请开启声音权限", Toast.LENGTH_LONG).show();
                     ActivityCompat.requestPermissions(DeviceDetailActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, RECORD_AUDIO_REQUEST_CODE);
                 }
@@ -181,6 +208,7 @@ public class DeviceDetailActivity extends BaseActivity {
             transaction.hide(tabMusic);
         }
     }
+
     /**
      * 切换图片至暗色
      */
