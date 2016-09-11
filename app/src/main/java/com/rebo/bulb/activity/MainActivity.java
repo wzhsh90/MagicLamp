@@ -74,6 +74,7 @@ public class MainActivity extends BaseActivity {
         @Override
         public void onScanTimeout() {
             super.onScanTimeout();
+            EventBusUtil.postEvent(AppConst.BLUE_STOP_SCAN,"");
             Log.i(TAG, "搜索时间结束");
         }
 
@@ -115,6 +116,9 @@ public class MainActivity extends BaseActivity {
                         break;
                     case AppConst.BLUE_CONN_FAIL:
                         bleConnFail(jsonObject.getString("content"));
+                        break;
+                    case AppConst.BLUE_STOP_SCAN:
+                       stopScanAnim();
                         break;
                 }
             } catch (JSONException e) {
