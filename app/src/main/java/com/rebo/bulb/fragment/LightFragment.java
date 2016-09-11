@@ -6,7 +6,7 @@ import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Switch;
+import android.widget.ImageView;
 
 import com.clj.fastble.conn.BleCharacterCallback;
 import com.clj.fastble.exception.BleException;
@@ -19,6 +19,7 @@ import com.rebo.bulb.ble.BleConst;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnCheckedChanged;
+import butterknife.OnClick;
 
 /**
  * Created by guodunsong on 16/7/10.
@@ -31,9 +32,10 @@ public class LightFragment extends BaseFragment {
     @Bind(R.id.colorPicker)
     ColorPicker colorPicker;
 
-    @Bind(R.id.switchOpenClose)
-    Switch switchOpenClose;
+    @Bind(R.id.btn_switch)
+    ImageView swithcBtn;
 
+    private Boolean lampswitch;
 
     @Nullable
     @Override
@@ -41,6 +43,8 @@ public class LightFragment extends BaseFragment {
         View view = inflater.inflate(R.layout.fragment_light, null);
         ButterKnife.bind(this,view);
         colorPicker.addOpacityBar(opacityBar);
+        colorPicker.setShowOldCenterColor(false);
+        lampswitch = false;
         return view;
     }
 
@@ -93,4 +97,20 @@ public class LightFragment extends BaseFragment {
                     }
                 });
     }
+
+    /**
+     * 灯开关事件
+     */
+    @OnClick({R.id.btn_switch})
+    public void onSwitchClick(){
+        if (lampswitch==true){
+            swithcBtn.setImageResource(R.mipmap.ic_off);
+            lampswitch = false;
+        }else {
+            swithcBtn.setImageResource(R.mipmap.ic_on);
+            lampswitch = true;
+        }
+    }
 }
+
+
