@@ -1,12 +1,17 @@
 package com.rebo.bulb.activity;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.design.widget.BottomSheetDialog;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -15,6 +20,7 @@ import android.widget.AdapterView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RadioButton;
+import android.widget.Toast;
 
 import com.rebo.bulb.BaseApplication;
 import com.rebo.bulb.R;
@@ -40,11 +46,12 @@ public class DeviceDetailActivity extends BaseActivity {
     ListView mMusicListView;
     MusicListAdapter musicListAdapter;
 
-    private Fragment mTab01;
-    private Fragment mTab02;
+    private Fragment tabLight;
+    private Fragment tabMusic;
     private Integer selectedIndex;
     private final static int TAB_MUSIC = 1;
     private final static int TAB_LIGHT = 0;
+    private static final int RECORD_AUDIO_REQUEST_CODE = 976;
 
     //    private BluetoothDevice device;
     BottomSheetDialog dialog;
@@ -76,6 +83,17 @@ public class DeviceDetailActivity extends BaseActivity {
         }
         return res;
     }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == RECORD_AUDIO_REQUEST_CODE) {//请求声音权限
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                setSelect(TAB_MUSIC);
+            } else {
+                // Permission Denied
+            }
+        }
+    }
 
     @Override
     protected void setListener() {
@@ -102,7 +120,14 @@ public class DeviceDetailActivity extends BaseActivity {
                 setSelect(TAB_LIGHT);
                 break;
             case R.id.tab_music:
-                setSelect(TAB_MUSIC);
+                if (ContextCompat.checkSelfPermission(DeviceDetailActivity.this, Manifest.permission.RECORD_AUDIO)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    setSelect(TAB_MUSIC);
+                }else{
+                    Toast.makeText(DeviceDetailActivity.this, "请开启声音权限", Toast.LENGTH_LONG).show();
+                    ActivityCompat.requestPermissions(DeviceDetailActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, RECORD_AUDIO_REQUEST_CODE);
+                }
+
                 break;
         }
     }
@@ -123,20 +148,20 @@ public class DeviceDetailActivity extends BaseActivity {
         // 设置内容区域
         switch (i) {
             case 0:
-                if (mTab01 == null) {
-                    mTab01 = new LightFragment();
-                    transaction.add(R.id.id_content, mTab01);
+                if (tabLight == null) {
+                    tabLight = new LightFragment();
+                    transaction.add(R.id.id_content, tabLight);
                 } else {
-                    transaction.show(mTab01);
+                    transaction.show(tabLight);
                 }
                 mTabs.get(0).setCompoundDrawablesWithIntrinsicBounds(0, R.mipmap.ic_control_pressed, 0, 0);
                 break;
             case 1:
-                if (mTab02 == null) {
-                    mTab02 = new MusicFragment();
-                    transaction.add(R.id.id_content, mTab02);
+                if (tabMusic == null) {
+                    tabMusic = new MusicFragment();
+                    transaction.add(R.id.id_content, tabMusic);
                 } else {
-                    transaction.show(mTab02);
+                    transaction.show(tabMusic);
                 }
 
                 mTabs.get(1).setCompoundDrawablesWithIntrinsicBounds(0, R.mipmap.ic_music_pressed, 0, 0);
@@ -149,15 +174,13 @@ public class DeviceDetailActivity extends BaseActivity {
     }
 
     private void hideFragment(FragmentTransaction transaction) {
-        if (mTab01 != null) {
-            transaction.hide(mTab01);
+        if (tabLight != null) {
+            transaction.hide(tabLight);
         }
-        if (mTab02 != null) {
-            transaction.hide(mTab02);
+        if (tabMusic != null) {
+            transaction.hide(tabMusic);
         }
-
     }
-
     /**
      * 切换图片至暗色
      */
@@ -171,7 +194,7 @@ public class DeviceDetailActivity extends BaseActivity {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
             MusicModel musicModel = musicListAdapter.getMusicModel(position);
-            ((MusicFragment) mTab02).playMusic(musicModel);
+            ((MusicFragment) tabMusic).playMusic(musicModel);
             dialog.dismiss();
         }
     }
@@ -200,5 +223,4 @@ public class DeviceDetailActivity extends BaseActivity {
         super.onDestroy();
         BaseApplication.getBleManager().closeBluetoothGatt();
     }
-
 }

@@ -73,6 +73,10 @@ public class BleManager {
     public boolean scanDevice(ListScanCallback callback) {
         return scanAllDevice(callback);
     }
+    public void stopScan(ListScanCallback callback) {
+       bleBluetooth.stopScan(callback);
+    }
+
 
     /**
      * 直接连接某一设备

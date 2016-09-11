@@ -8,10 +8,8 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -37,13 +35,7 @@ import butterknife.Bind;
 
 public class MainActivity extends BaseActivity {
 
-    private static final int RECORD_AUDIO_REQUEST_CODE = 976;
-    private static final int REQUEST_ENABLE_BT = 977;
-    private static final int ACCESS_FINE_LOCATION_CODE = 988;
     private static final String TAG = "magic_ble";
-
-    // Stops scanning after 10 seconds.
-    private static final long SCAN_PERIOD = 10000;
 
     @Bind(R.id.lv_device)
     ListView listView;
@@ -55,6 +47,21 @@ public class MainActivity extends BaseActivity {
 
     private DeviceListAdapter deviceListAdapter;
     private BleManager bleManager;
+    private ListScanCallback listScanCallback = new ListScanCallback(BleConst.SCAN_TIME_OUT) {
+        @Override
+        public void onDeviceFound(BluetoothDevice device) {
+//             device.getName() + "------mac:" + device.getAddress());
+            emptyRelativeLayout.setVisibility(View.GONE);
+            deviceListAdapter.addDevice(device);
+            deviceListAdapter.notifyDataSetChanged();
+        }
+
+        @Override
+        public void onScanTimeout() {
+            super.onScanTimeout();
+            Log.i(TAG, "搜索时间结束");
+        }
+    };
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
@@ -65,35 +72,14 @@ public class MainActivity extends BaseActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         }
         setNavigationTitle("设备");
-        //开启声音权限
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-//            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, RECORD_AUDIO_REQUEST_CODE);
-//        }
         initBleManager();
         initBluetooth();
 
     }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == RECORD_AUDIO_REQUEST_CODE) {//请求声音权限
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-            } else {
-                // Permission Denied
-            }
-        }
-    }
-
     @Override
     protected void setListener() {
-
     }
-    private void connectDevice(){
-
-    }
-    private void notifyChar(){
+    private void notifyChar() {
         bleManager.notifyDevice(
                 BleConst.RX_SERVICE_UUID.toString(),
                 BleConst.TX_READ_UUID.toString(),
@@ -112,79 +98,60 @@ public class MainActivity extends BaseActivity {
                 });
     }
 
+    private void connectToDevice(final BluetoothDevice device) {
+        bleManager.connectDevice(device, new BleGattCallback() {
+            @Override
+            public void onConnectSuccess(BluetoothGatt gatt, int status) {
+                Log.i(TAG, "连接成功！");
+                gatt.discoverServices();
+                Intent intent = new Intent(MainActivity.this, DeviceDetailActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putParcelable("device", device);
+                intent.putExtras(bundle);
+                MainActivity.this.startActivity(intent);
+            }
+
+            @Override
+            public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+                Log.i(TAG, "服务被发现！");
+            }
+
+            @Override
+            public void onConnectFailure(BleException exception) {
+                Log.i(TAG, "连接失败或连接中断：" + '\n' + exception.toString());
+                Toast.makeText(MainActivity.this, "连接失败或连接中断", Toast.LENGTH_LONG).show();
+//              bleManager.handleException(exception);
+            }
+        });
+    }
+
     private final class OnItemClickListener implements AdapterView.OnItemClickListener {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
-
-//            if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.RECORD_AUDIO)
-//                    == PackageManager.PERMISSION_GRANTED) {
-            final BluetoothDevice device = deviceListAdapter.getItem(position);
-            bleManager.connectDevice(device, new BleGattCallback() {
-                @Override
-                public void onConnectSuccess(BluetoothGatt gatt, int status) {
-                    Log.i(TAG, "连接成功！");
-                    gatt.discoverServices();                // 连接上设备后搜索服务
-                    Intent intent = new Intent(MainActivity.this, DeviceDetailActivity.class);
-                    Bundle bundle = new Bundle();
-                    bundle.putParcelable("device", device);
-                    intent.putExtras(bundle);
-                    MainActivity.this.startActivity(intent);
-                }
-                @Override
-                public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-                    Log.i(TAG, "服务被发现！");
-                }
-                @Override
-                public void onConnectFailure(BleException exception) {
-                    Log.i(TAG, "连接失败或连接中断：" + '\n' + exception.toString());
-                    Toast.makeText(MainActivity.this, "连接失败或连接中断", Toast.LENGTH_LONG).show();
-//                    bleManager.handleException(exception);
-                }
-            });
-
-
-//            } else {
-//                Toast.makeText(MainActivity.this, "请开启声音权限", Toast.LENGTH_LONG).show();
-//                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, RECORD_AUDIO_REQUEST_CODE);
-//            }
+            BluetoothDevice device = deviceListAdapter.getItem(position);
+            if (null != device) {
+                connectToDevice(device);
+            }
         }
-    }
-
-    private boolean isBleSupport() {
-        boolean support = false;
-        if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            support = true;
-        }
-        return support;
     }
 
     private void initBleManager() {
-        bleManager =BaseApplication.getBleManager();
+        bleManager = BaseApplication.getBleManager();
     }
-    private void scanBleDevice() {
-        bleManager.scanDevice(new ListScanCallback(BleConst.SCAN_TIME_OUT) {
-            @Override
-            public void onDeviceFound(BluetoothDevice device) {
-//             device.getName() + "------mac:" + device.getAddress());
-                emptyRelativeLayout.setVisibility(View.GONE);
-                deviceListAdapter.addDevice(device);
-                deviceListAdapter.notifyDataSetChanged();
-            }
 
-            @Override
-            public void onScanTimeout() {
-                super.onScanTimeout();
-                Log.i(TAG, "搜索时间结束");
-            }
-        });
+    private void scanBleDevice() {
+        bleManager.scanDevice(listScanCallback);
+    }
+
+    private void stopScan() {
+        bleManager.stopScan(listScanCallback);
     }
 
     private void initBluetooth() {
         listView.setOnItemClickListener(new OnItemClickListener());
         deviceListAdapter = new DeviceListAdapter(MainActivity.this, R.layout.listview_item_device);
         listView.setAdapter(deviceListAdapter);
-        //是否支持蓝牙
-        if (!isBleSupport()) {
+        if (!bleManager.isSupportBle()) {
             emptyView.setText("该手机不支持BLE 4.0");
             return;
         }
@@ -192,13 +159,10 @@ public class MainActivity extends BaseActivity {
                 (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
 
-        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
-//            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-//            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        if (!bleManager.isBlueEnable()) {
             emptyView.setText("请打开手机蓝牙");
             return;
         }
         scanBleDevice();
     }
-
 }
