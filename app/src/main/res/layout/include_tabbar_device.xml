@@ -4,8 +4,11 @@
     android:layout_height="55dp"
     android:layout_gravity="bottom"
     android:layout_alignParentBottom="true"
-    android:orientation="horizontal" >
-
+    android:orientation="vertical" >
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#EAEAEA"/>
     <RadioGroup
         android:layout_width="match_parent"
         android:layout_height="match_parent"

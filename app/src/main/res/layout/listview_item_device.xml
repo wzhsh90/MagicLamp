@@ -23,19 +23,6 @@
         android:textSize="16dp" />
 
     <TextView
-        android:layout_width="60dp"
-        android:layout_height="30dp"
-        android:text="连接"
-        android:id="@+id/btn_connect"
-        android:layout_marginRight="10dp"
-        android:layout_centerVertical="true"
-        android:layout_alignParentRight="true"
-        android:background="@drawable/btn_device_connect"
-        android:textColor="@color/colorPrimary"
-        style="?android:attr/borderlessButtonStyle"
-        />
-
-    <TextView
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_alignParentBottom="true"
