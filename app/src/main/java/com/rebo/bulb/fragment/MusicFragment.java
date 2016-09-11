@@ -1,6 +1,7 @@
 package com.rebo.bulb.fragment;
 
 import android.annotation.SuppressLint;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.audiofx.Equalizer;
@@ -21,12 +22,25 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.clj.fastble.conn.BleCharacterCallback;
+import com.clj.fastble.exception.BleException;
+import com.rebo.bulb.AppConst;
+import com.rebo.bulb.BaseApplication;
 import com.rebo.bulb.R;
 import com.rebo.bulb.activity.DeviceDetailActivity;
+import com.rebo.bulb.ble.BleConst;
 import com.rebo.bulb.model.MusicModel;
+import com.rebo.bulb.utils.EventBusUtil;
+
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -38,10 +52,11 @@ import butterknife.OnClick;
 @SuppressLint("NewApi")
 public class MusicFragment extends BaseFragment {
 
-//    private ImageView musicImageView;
+    //    private ImageView musicImageView;
     private static final String TAG = "MusicFragment";
 
     private static final float VISUALIZER_HEIGHT_DIP = 360f;
+    private static final int SPLIT_CNT = 20;
     private SeekBar seekBar;
     private MediaPlayer mMediaPlayer;
     private Visualizer mVisualizer;
@@ -51,6 +66,8 @@ public class MusicFragment extends BaseFragment {
     private MusicModel curMusicModel;
     private TextView mMusicTitleTextView;
     private Animation operatingAnim;
+    private final ConcurrentLinkedQueue<byte[]> commandQueue = new ConcurrentLinkedQueue<byte[]>();
+    private boolean bleProcessing;
 
     @Bind(R.id.iv_dvd)
     ImageView dvdImageView;
@@ -67,15 +84,30 @@ public class MusicFragment extends BaseFragment {
             handler.postDelayed(updateThread, 100);
         }
     };
-
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void handlerEventBus(JSONObject jsonObject) {
+        if (null != jsonObject) {
+            String code;
+            try {
+                code = jsonObject.getString("code");
+                switch (code) {
+                    case AppConst.BLUE_MUSIC_WRITE_SUC:
+                        commandCompleted();
+                        break;
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_music, null);
-        ButterKnife.bind(this,view);
-
-        mPlayButton = (ImageView)view.findViewById(R.id.iv_play);
-        mMusicTitleTextView = (TextView)view.findViewById(R.id.tv_music_title);
+        ButterKnife.bind(this, view);
+        EventBusUtil.registerEvent(this);
+        mPlayButton = (ImageView) view.findViewById(R.id.iv_play);
+        mMusicTitleTextView = (TextView) view.findViewById(R.id.tv_music_title);
 
 
         mLinearLayout = (LinearLayout) view.findViewById(R.id.ll);
@@ -135,13 +167,13 @@ public class MusicFragment extends BaseFragment {
         });
 
         //初始化歌曲
-        DeviceDetailActivity parentActivity = (DeviceDetailActivity)getActivity();
+        DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
         List<MusicModel> list = parentActivity.getData();
         playMusic(list.get(0));
         pause();
 
         //专辑旋转动画
-        operatingAnim = AnimationUtils.loadAnimation(getActivity(),R.anim.anim_rotate);
+        operatingAnim = AnimationUtils.loadAnimation(getActivity(), R.anim.anim_rotate);
         LinearInterpolator linearInterpolator = new LinearInterpolator();
         operatingAnim.setInterpolator(linearInterpolator);
 
@@ -151,6 +183,7 @@ public class MusicFragment extends BaseFragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
 
     }
 
@@ -167,8 +200,14 @@ public class MusicFragment extends BaseFragment {
     }
 
     @Override
-    protected void lazyLoad() { }
+    public void onDestroy() {
+        EventBusUtil.unRegisterEvent(this);
+        super.onDestroy();
+    }
 
+    @Override
+    protected void lazyLoad() {
+    }
 
 
     private void setupVisualizerFxAndUI() {
@@ -186,7 +225,7 @@ public class MusicFragment extends BaseFragment {
         // 实例化Visualizer，参数SessionId可以通过MediaPlayer的对象获得
         mVisualizer = new Visualizer(mMediaPlayer.getAudioSessionId());
         // 设置需要转换的音乐内容长度，专业的说这就是采样,该采样值一般为2的指数倍
-        mVisualizer.setCaptureSize(256);
+        mVisualizer.setCaptureSize(128);
         // 接下来就好理解了设置一个监听器来监听不断而来的所采集的数据。一共有4个参数，第一个是监听者，第二个单位是毫赫兹，表示的是采集的频率，第三个是是否采集波形，第四个是是否采集频率
         mVisualizer.setDataCaptureListener(
                 // 这个回调应该采集的是波形数据
@@ -194,14 +233,80 @@ public class MusicFragment extends BaseFragment {
                     public void onWaveFormDataCapture(Visualizer visualizer,
                                                       byte[] bytes, int samplingRate) {
                         mVisualizerView.updateVisualizer(bytes); // 按照波形来画图
+                        if(musicPlaying()){
+                            writeWaveData(bytes);
+                        }
                     }
-
                     // 这个回调应该采集的是快速傅里叶变换有关的数据
                     public void onFftDataCapture(Visualizer visualizer,
                                                  byte[] fft, int samplingRate) {
                         mVisualizerView.updateVisualizer(fft);
                     }
-                }, maxCR / 2, false, true);
+                }, maxCR / 2, true, true);
+    }
+
+    private void writeWaveData(byte[] data) {
+        int len = data.length;
+        for (int i = 0; i < len; i += SPLIT_CNT) {
+            byte[] splitData = Arrays.copyOfRange(data, i, Math.min(i + SPLIT_CNT, len));
+            commandQueue.add(splitData);
+        }
+        if (!bleProcessing) {
+            processCommands();
+        }
+    }
+
+    // command finished, queue the next command
+    private void commandCompleted() {
+        bleProcessing = false;
+        processCommands();
+    }
+
+    private void processCommands() {
+        if (bleProcessing) {
+            return;
+        }
+        if (commandQueue.isEmpty()) {
+            return;
+        }
+        if(!musicPlaying()){
+            commandQueue.clear();
+            return;
+        }
+        byte[] command = commandQueue.poll();
+        if (command != null) {
+            bleProcessing = true;
+//            try {
+//                TimeUnit.MILLISECONDS.sleep(100);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+            write(command);
+        }
+    }
+
+    private void write(byte[] data) {
+        if (!BaseApplication.getBleManager().isConnected()) {
+            return;
+        }
+        BaseApplication.getBleManager().writeDevice(
+                BleConst.RX_SERVICE_UUID,
+                BleConst.RX_WRITE_UUID,
+                BleConst.UUID_CLIENT_CHARACTERISTIC_CONFIG_DESCRIPTOR,
+                data,
+                new BleCharacterCallback() {
+                    @Override
+                    public void onSuccess(BluetoothGattCharacteristic characteristic) {
+                        EventBusUtil.postEvent(AppConst.BLUE_MUSIC_WRITE_SUC,"");
+//                        Log.d(TAG, "写特征值成功: " + '\n' + Arrays.toString(characteristic.getValue()));
+                    }
+
+                    @Override
+                    public void onFailure(BleException exception) {
+//                        Log.e(TAG, "写读特征值失败: " + '\n' + exception.toString());
+//                        bleManager.handleException(exception);
+                    }
+                });
     }
 
     @Override
@@ -215,8 +320,8 @@ public class MusicFragment extends BaseFragment {
         }
     }
 
-    public void playMusic(MusicModel musicModel){
-        if (mMediaPlayer == null){
+    public void playMusic(MusicModel musicModel) {
+        if (mMediaPlayer == null) {
             return;
         }
         try {
@@ -231,19 +336,23 @@ public class MusicFragment extends BaseFragment {
             e.printStackTrace();
         }
     }
-
+    public boolean musicPlaying(){
+        boolean flag=false;
+        flag=null!=mMediaPlayer&&mMediaPlayer.isPlaying();
+        return  flag;
+    }
 
     /**
      * 播放暂停
      */
     @OnClick({R.id.iv_play})
-    public void onPlay(){
-        if (mMediaPlayer == null){
+    public void onPlay() {
+        if (mMediaPlayer == null) {
             return;
         }
-        if (mMediaPlayer.isPlaying()){
+        if (mMediaPlayer.isPlaying()) {
             pause();
-        }else {
+        } else {
             play();
         }
     }
@@ -253,16 +362,16 @@ public class MusicFragment extends BaseFragment {
      * 上一曲
      */
     @OnClick({R.id.iv_play_prev})
-    public void onPlayPrevious(){
-        DeviceDetailActivity parentActivity = (DeviceDetailActivity)getActivity();
+    public void onPlayPrevious() {
+        DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
         List<MusicModel> list = parentActivity.getData();
-        for (int i=0; i < list.size(); i++){
+        for (int i = 0; i < list.size(); i++) {
             MusicModel musicModel = list.get(i);
-            if (musicModel.getMusicId() == curMusicModel.getMusicId()){
-                if ((i-1)<0) {
-                    curMusicModel = list.get(list.size()-1);
-                }else{
-                    curMusicModel = list.get(i-1);
+            if (musicModel.getMusicId() == curMusicModel.getMusicId()) {
+                if ((i - 1) < 0) {
+                    curMusicModel = list.get(list.size() - 1);
+                } else {
+                    curMusicModel = list.get(i - 1);
                 }
                 playMusic(curMusicModel);
                 break;
@@ -274,16 +383,16 @@ public class MusicFragment extends BaseFragment {
      * 下一曲
      */
     @OnClick({R.id.iv_play_next})
-    public void onPlayNext(){
-        DeviceDetailActivity parentActivity = (DeviceDetailActivity)getActivity();
+    public void onPlayNext() {
+        DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
         List<MusicModel> list = parentActivity.getData();
-        for (int i=0; i < list.size(); i++){
+        for (int i = 0; i < list.size(); i++) {
             MusicModel musicModel = list.get(i);
-            if (musicModel.getMusicId() == curMusicModel.getMusicId()){
-                if (i+1 == list.size()) {
+            if (musicModel.getMusicId() == curMusicModel.getMusicId()) {
+                if (i + 1 == list.size()) {
                     curMusicModel = list.get(0);
-                }else{
-                    curMusicModel = list.get(i+1);
+                } else {
+                    curMusicModel = list.get(i + 1);
                 }
                 playMusic(curMusicModel);
                 break;
@@ -294,7 +403,7 @@ public class MusicFragment extends BaseFragment {
     /**
      * 播放
      */
-    private void play(){
+    private void play() {
         mMediaPlayer.start();
         mPlayButton.setImageResource(R.mipmap.ic_play_pressed);
         if (operatingAnim != null) {
@@ -306,7 +415,7 @@ public class MusicFragment extends BaseFragment {
     /**
      * 暂停
      */
-    private void pause(){
+    private void pause() {
         mMediaPlayer.pause();
         mPlayButton.setImageResource(R.mipmap.ic_play_normal);
         if (operatingAnim != null) {

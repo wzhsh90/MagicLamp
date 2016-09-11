@@ -33,7 +33,12 @@
             </intent-filter>
         </activity>
         <activity android:name=".activity.DeviceDetailActivity"/>
-        <service android:name=".bluetooth.BluetoothLeService" android:enabled="true"></service>
+        <receiver android:name=".service.BluetoothStateReceiver">
+            <intent-filter>
+                <action android:name="check_state" />
+                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

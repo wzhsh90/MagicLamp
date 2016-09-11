@@ -22,9 +22,9 @@ import com.clj.fastble.log.BleLog;
 import com.clj.fastble.scan.NameScanCallback;
 import com.clj.fastble.scan.PeriodScanCallback;
 import com.clj.fastble.utils.BluetoothUtil;
+import com.google.common.collect.Sets;
 
 import java.lang.reflect.Method;
-import java.util.LinkedHashSet;
 import java.util.Set;
 
 
@@ -43,7 +43,7 @@ public class BleBluetooth {
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothGatt bluetoothGatt;
     private Handler handler = new Handler(Looper.getMainLooper());
-    private Set<BluetoothGattCallback> callbackList = new LinkedHashSet<>();
+    private Set<BluetoothGattCallback> callbackList = Sets.newConcurrentHashSet();
 
     public BleBluetooth(Context context) {
         this.context = context = context.getApplicationContext();

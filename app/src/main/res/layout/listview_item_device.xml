@@ -22,7 +22,7 @@
         android:layout_marginLeft="6dp"
         android:textSize="16dp" />
 
-    <Button
+    <TextView
         android:layout_width="60dp"
         android:layout_height="30dp"
         android:text="连接"

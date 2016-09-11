@@ -27,10 +27,17 @@ import com.clj.fastble.bluetooth.BleGattCallback;
 import com.clj.fastble.conn.BleCharacterCallback;
 import com.clj.fastble.exception.BleException;
 import com.clj.fastble.scan.ListScanCallback;
+import com.rebo.bulb.AppConst;
 import com.rebo.bulb.BaseApplication;
 import com.rebo.bulb.R;
 import com.rebo.bulb.adapter.DeviceListAdapter;
 import com.rebo.bulb.ble.BleConst;
+import com.rebo.bulb.utils.EventBusUtil;
+
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Arrays;
 
@@ -61,16 +68,12 @@ public class MainActivity extends BaseActivity {
     private ListScanCallback listScanCallback = new ListScanCallback(BleConst.SCAN_TIME_OUT) {
         @Override
         public void onDeviceFound(BluetoothDevice device) {
-//             device.getName() + "------mac:" + device.getAddress());
-            emptyRelativeLayout.setVisibility(View.GONE);
-            deviceListAdapter.addDevice(device);
-            deviceListAdapter.notifyDataSetChanged();
+            onBleDeviceFound(device);
         }
 
         @Override
         public void onScanTimeout() {
             super.onScanTimeout();
-            stopScanAnim();
             Log.i(TAG, "搜索时间结束");
         }
 
@@ -81,21 +84,75 @@ public class MainActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        EventBusUtil.registerEvent(this);
         if (this.mToolbar != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         }
         setNavigationTitle("设备");
         initBleManager();
         initBluetooth();
-
+        spinAnimation();
+    }
+    private void spinAnimation() {
         //专辑旋转动画
-        operatingAnim = AnimationUtils.loadAnimation(this,R.anim.anim_rotate);
+        operatingAnim = AnimationUtils.loadAnimation(this, R.anim.anim_rotate);
         LinearInterpolator linearInterpolator = new LinearInterpolator();
         operatingAnim.setInterpolator(linearInterpolator);
     }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void handlerEventBus(JSONObject jsonObject) {
+        if (null != jsonObject) {
+            String code;
+            try {
+                code = jsonObject.getString("code");
+                switch (code) {
+                    case AppConst.BLUE_ON:
+                        onBlueOn();
+                        break;
+                    case AppConst.BLUE_OFF:
+                        onBlueOff();
+                        break;
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     @Override
     protected void setListener() {
     }
+
+    private void onBleDeviceFound(final BluetoothDevice device) {
+//        device.getName() + "------mac:" + device.getAddress());
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                emptyRelativeLayout.setVisibility(View.GONE);
+                deviceListAdapter.addDevice(device);
+                deviceListAdapter.notifyDataSetChanged();
+            }
+        });
+
+    }
+
+    private void onBlueOn() {
+        if (bleManager.isSupportBle()) {
+            stopScan();
+            scanBleDevice();
+        }
+    }
+
+    private void onBlueOff() {
+        if (bleManager.isSupportBle()) {
+            emptyRelativeLayout.setVisibility(View.VISIBLE);
+            emptyView.setText("请打开手机蓝牙");
+            deviceListAdapter.clearData();
+            deviceListAdapter.notifyDataSetChanged();
+        }
+    }
+
     private void notifyChar() {
         bleManager.notifyDevice(
                 BleConst.RX_SERVICE_UUID.toString(),
@@ -117,6 +174,8 @@ public class MainActivity extends BaseActivity {
 
     private void connectToDevice(final BluetoothDevice device) {
         stopScan();
+        bleManager.closeBluetoothGatt();
+        Toast.makeText(MainActivity.this, "正在连接...", Toast.LENGTH_SHORT).show();
         bleManager.connectDevice(device, new BleGattCallback() {
             @Override
             public void onConnectSuccess(BluetoothGatt gatt, int status) {
@@ -137,7 +196,7 @@ public class MainActivity extends BaseActivity {
             @Override
             public void onConnectFailure(BleException exception) {
                 Log.i(TAG, "连接失败或连接中断：" + '\n' + exception.toString());
-                Toast.makeText(MainActivity.this, "连接失败或连接中断", Toast.LENGTH_LONG).show();
+//                Toast.makeText(MainActivity.this, "连接失败或连接中断", Toast.LENGTH_LONG).show();
 //              bleManager.handleException(exception);
             }
         });
@@ -152,6 +211,7 @@ public class MainActivity extends BaseActivity {
             }
         }
     }
+
     private void initBleManager() {
         bleManager = BaseApplication.getBleManager();
     }
@@ -163,10 +223,11 @@ public class MainActivity extends BaseActivity {
 
     private void stopScan() {
         stopScanAnim();
-        if(bleManager.isInScanning()){
+        if (bleManager.isInScanning()) {
             bleManager.stopScan(listScanCallback);
         }
     }
+
     private void initBluetooth() {
         listView.setOnItemClickListener(new OnItemClickListener());
         deviceListAdapter = new DeviceListAdapter(MainActivity.this, R.layout.listview_item_device);
@@ -187,23 +248,23 @@ public class MainActivity extends BaseActivity {
     }
 
     @OnClick({R.id.iv_lamp})
-    public void onLampImageViewClick(){
-        if (bleManager.isInScanning()){
+    public void onLampImageViewClick() {
+        if (bleManager.isInScanning()) {
             stopScan();
-        }else {
+        } else {
             scanBleDevice();
 
         }
     }
 
-    public void startScanAnim(){
+    public void startScanAnim() {
         if (operatingAnim != null) {
             titleTextView.setText("正在扫描...");
             lampImageView.startAnimation(operatingAnim);
         }
     }
 
-    public void stopScanAnim(){
+    public void stopScanAnim() {
         if (operatingAnim != null) {
             titleTextView.setText("我的设备");
             lampImageView.clearAnimation();

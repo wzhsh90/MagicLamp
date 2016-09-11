@@ -3,10 +3,9 @@ package com.rebo.bulb.adapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.google.common.base.Strings;
 import com.rebo.bulb.R;
 
 /**
@@ -15,7 +14,6 @@ import com.rebo.bulb.R;
 public class DeviceListAdapter extends CommonAdapter<BluetoothDevice>{
     private Context context;
     private TextView mTitleTextView;
-    private Button mConnectButton;
 
     public DeviceListAdapter(Context context,int resource){
         super(context, resource);
@@ -26,20 +24,21 @@ public class DeviceListAdapter extends CommonAdapter<BluetoothDevice>{
     public void convert(ViewHolder helper, BluetoothDevice item) {
         View convertView = helper.getConvertView();
         mTitleTextView = (TextView)convertView.findViewById(R.id.tv_title);
-        mConnectButton = (Button)convertView.findViewById(R.id.btn_connect);
-//        mConnectButton.setText();
-        mTitleTextView.setText(item.getName());
-        mConnectButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Toast.makeText(context,"正在连接",Toast.LENGTH_SHORT).show();
-            }
-        });
+        String name="";
+        if(Strings.isNullOrEmpty(item.getName())){
+            name=item.getAddress();
+        }else{
+            name=item.getName();
+        }
+        mTitleTextView.setText(name);
     }
 
     public void addDevice(BluetoothDevice device){
         if(!mDatas.contains(device)){
             mDatas.add(device);
         }
+    }
+    public void clearData(){
+        this.mDatas.clear();
     }
 }

@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -47,43 +48,72 @@ public class LightFragment extends BaseFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_light, null);
-        ButterKnife.bind(this,view);
+        ButterKnife.bind(this, view);
         colorPicker.addOpacityBar(opacityBar);
         colorPicker.setShowOldCenterColor(false);
+
         //监听颜色改变
-        colorPicker.setOnColorChangedListener(new ColorPicker.OnColorChangedListener() {
+        colorPicker.setOnColorSelectedListener(new ColorPicker.OnColorSelectedListener() {
             @Override
-            public void onColorChanged(int color) {
-                Log.i("LightFragment","------>color:"+color);
+            public void onColorSelected(int color) {
+                Log.i("LightFragment", "------>color:" + color);
+//                writeColor(color);
             }
         });
+        opacityBar.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if( MotionEvent.ACTION_UP==motionEvent.getAction()){
+                    Log.i("LightFragment", "------>opacity:" + opacityBar.getOpacity());
+//                    writeOpacity(opacityBar.getOpacity());
+                    return true;
+                }
+                return false;
+            }
+        });
+//        opacityBar.setOnOpacityChangedListener(new OpacityBar.OnOpacityChangedListener() {
+//            @Override
+//            public void onOpacityChanged(int opacity) {
+//                Log.i("LightFragment", "------>opacity:" + opacity);
+////                writeOpacity(opacity);
+//            }
+//        });
+//        colorPicker.setOnColorChangedListener(new ColorPicker.OnColorChangedListener() {
+//            @Override
+//            public void onColorChanged(int color) {
+//                Log.i("LightFragment", "------>color:" + color);
+////                writeColor(color);
+//            }
+//        });
         lampswitch = false;
 
         return view;
     }
 
     @OnCheckedChanged({R.id.switchColor, R.id.switchOpenClose})
-    void switchButtonChange(android.widget.CompoundButton btn,boolean checked){
-        switch (btn.getId()){
+    void switchButtonChange(android.widget.CompoundButton btn, boolean checked) {
+        switch (btn.getId()) {
             case R.id.switchColor:
-                 if(checked){
+                if (checked) {
 
-                 }else{
+                } else {
 
-                 }
+                }
                 break;
             case R.id.switchOpenClose:
-                if(checked != lampswitch){
+                if (checked != lampswitch) {
                     onSwitchClick();
                 }
 
                 break;
         }
     }
+
     @Override
     protected void lazyLoad() {
 
     }
+
     private void openLight() {
         write("2");
     }
@@ -91,7 +121,18 @@ public class LightFragment extends BaseFragment {
     private void closeLight() {
         write("1");
     }
+
+    private void writeColor(int color) {
+        write(String.valueOf(color));
+    }
+    private void writeOpacity(int opacity) {
+        write(String.valueOf(opacity));
+    }
+
     private void write(String data) {
+        if (!BaseApplication.getBleManager().isConnected()) {
+            return;
+        }
         BaseApplication.getBleManager().writeDevice(
                 BleConst.RX_SERVICE_UUID,
                 BleConst.RX_WRITE_UUID,
@@ -115,13 +156,13 @@ public class LightFragment extends BaseFragment {
      * 灯开关事件
      */
     @OnClick({R.id.btn_switch})
-    public void onSwitchClick(){
-        if (lampswitch==true){
+    public void onSwitchClick() {
+        if (lampswitch == true) {
             swithcBtn.setImageResource(R.mipmap.ic_off);
             lampswitch = false;
             closeLight();
 
-        }else {
+        } else {
             swithcBtn.setImageResource(R.mipmap.ic_on);
             lampswitch = true;
             openLight();
