@@ -13,6 +13,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
@@ -25,6 +28,7 @@ import com.rebo.bulb.model.MusicModel;
 import java.io.IOException;
 import java.util.List;
 
+import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
@@ -46,6 +50,11 @@ public class MusicFragment extends BaseFragment {
     private Equalizer mEqualizer;
     private MusicModel curMusicModel;
     private TextView mMusicTitleTextView;
+    private Animation operatingAnim;
+
+    @Bind(R.id.iv_dvd)
+    ImageView dvdImageView;
+
 
     ImageView mPlayButton;
 
@@ -134,6 +143,11 @@ public class MusicFragment extends BaseFragment {
         List<MusicModel> list = parentActivity.getData();
         playMusic(list.get(0));
         pause();
+
+        //专辑旋转动画
+        operatingAnim = AnimationUtils.loadAnimation(getActivity(),R.anim.anim_rotate);
+        LinearInterpolator linearInterpolator = new LinearInterpolator();
+        operatingAnim.setInterpolator(linearInterpolator);
 
         return view;
     }
@@ -287,6 +301,9 @@ public class MusicFragment extends BaseFragment {
     private void play(){
         mMediaPlayer.start();
         mPlayButton.setImageResource(R.mipmap.ic_play_pressed);
+        if (operatingAnim != null) {
+            dvdImageView.startAnimation(operatingAnim);
+        }
 
     }
 
@@ -296,6 +313,9 @@ public class MusicFragment extends BaseFragment {
     private void pause(){
         mMediaPlayer.pause();
         mPlayButton.setImageResource(R.mipmap.ic_play_normal);
+        if (operatingAnim != null) {
+            dvdImageView.clearAnimation();
+        }
     }
 
 }

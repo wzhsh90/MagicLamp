@@ -19,12 +19,13 @@
             android:orientation="vertical">
         </LinearLayout>
 
-        <com.rebo.bulb.activity.RoundImageView
+        <ImageView
+            android:id="@+id/iv_dvd"
             android:layout_width="245px"
             android:layout_height="245px"
             android:layout_marginTop="80dp"
             android:layout_centerHorizontal="true"
-            android:src="@mipmap/a" />
+            android:src="@mipmap/img_dvd" />
 
         <RelativeLayout
             android:layout_width="match_parent"
