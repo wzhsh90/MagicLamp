@@ -12,7 +12,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.animation.LinearInterpolator;
 import android.widget.AdapterView;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -31,6 +35,7 @@ import com.rebo.bulb.ble.BleConst;
 import java.util.Arrays;
 
 import butterknife.Bind;
+import butterknife.OnClick;
 
 
 public class MainActivity extends BaseActivity {
@@ -45,6 +50,12 @@ public class MainActivity extends BaseActivity {
     @Bind(R.id.tv_empty)
     TextView emptyView;
 
+    @Bind(R.id.iv_lamp)
+    ImageView lampImageView;
+    @Bind(R.id.tv_home_title)
+    TextView titleTextView;
+
+    private Animation operatingAnim;
     private DeviceListAdapter deviceListAdapter;
     private BleManager bleManager;
     private ListScanCallback listScanCallback = new ListScanCallback(BleConst.SCAN_TIME_OUT) {
@@ -59,8 +70,10 @@ public class MainActivity extends BaseActivity {
         @Override
         public void onScanTimeout() {
             super.onScanTimeout();
+            stopScanAnim();
             Log.i(TAG, "搜索时间结束");
         }
+
     };
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
@@ -75,6 +88,10 @@ public class MainActivity extends BaseActivity {
         initBleManager();
         initBluetooth();
 
+        //专辑旋转动画
+        operatingAnim = AnimationUtils.loadAnimation(this,R.anim.anim_rotate);
+        LinearInterpolator linearInterpolator = new LinearInterpolator();
+        operatingAnim.setInterpolator(linearInterpolator);
     }
     @Override
     protected void setListener() {
@@ -140,10 +157,12 @@ public class MainActivity extends BaseActivity {
     }
 
     private void scanBleDevice() {
+        startScanAnim();
         bleManager.scanDevice(listScanCallback);
     }
 
     private void stopScan() {
+        stopScanAnim();
         if(bleManager.isInScanning()){
             bleManager.stopScan(listScanCallback);
         }
@@ -165,5 +184,30 @@ public class MainActivity extends BaseActivity {
             return;
         }
         scanBleDevice();
+    }
+
+    @OnClick({R.id.iv_lamp})
+    public void onLampImageViewClick(){
+        if (bleManager.isInScanning()){
+            stopScan();
+        }else {
+            scanBleDevice();
+
+        }
+    }
+
+    public void startScanAnim(){
+        if (operatingAnim != null) {
+            titleTextView.setText("正在扫描...");
+            lampImageView.startAnimation(operatingAnim);
+        }
+    }
+
+    public void stopScanAnim(){
+        if (operatingAnim != null) {
+            titleTextView.setText("我的设备");
+            lampImageView.clearAnimation();
+        }
+
     }
 }
