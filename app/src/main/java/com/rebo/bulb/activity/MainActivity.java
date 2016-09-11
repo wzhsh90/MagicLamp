@@ -113,6 +113,9 @@ public class MainActivity extends BaseActivity {
                     case AppConst.BLUE_OFF:
                         onBlueOff();
                         break;
+                    case AppConst.BLUE_CONN_FAIL:
+                        bleConnFail(jsonObject.getString("content"));
+                        break;
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -151,6 +154,9 @@ public class MainActivity extends BaseActivity {
             deviceListAdapter.clearData();
             deviceListAdapter.notifyDataSetChanged();
         }
+    }
+    private void bleConnFail(String errMsg){
+        Toast.makeText(MainActivity.this,errMsg, Toast.LENGTH_LONG).show();
     }
 
     private void notifyChar() {
@@ -196,6 +202,7 @@ public class MainActivity extends BaseActivity {
             @Override
             public void onConnectFailure(BleException exception) {
                 Log.i(TAG, "连接失败或连接中断：" + '\n' + exception.toString());
+                EventBusUtil.postEvent(AppConst.BLUE_CONN_FAIL,"连接失败或连接中断");
 //                Toast.makeText(MainActivity.this, "连接失败或连接中断", Toast.LENGTH_LONG).show();
 //              bleManager.handleException(exception);
             }
