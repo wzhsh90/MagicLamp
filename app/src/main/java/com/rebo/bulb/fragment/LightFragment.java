@@ -3,10 +3,12 @@ package com.rebo.bulb.fragment;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.Switch;
 
 import com.clj.fastble.conn.BleCharacterCallback;
 import com.clj.fastble.exception.BleException;
@@ -35,7 +37,11 @@ public class LightFragment extends BaseFragment {
     @Bind(R.id.btn_switch)
     ImageView swithcBtn;
 
+
+    @Bind(R.id.switchOpenClose)
+    Switch switchOpenClose;
     private Boolean lampswitch;
+
 
     @Nullable
     @Override
@@ -44,7 +50,15 @@ public class LightFragment extends BaseFragment {
         ButterKnife.bind(this,view);
         colorPicker.addOpacityBar(opacityBar);
         colorPicker.setShowOldCenterColor(false);
+        //监听颜色改变
+        colorPicker.setOnColorChangedListener(new ColorPicker.OnColorChangedListener() {
+            @Override
+            public void onColorChanged(int color) {
+                Log.i("LightFragment","------>color:"+color);
+            }
+        });
         lampswitch = false;
+
         return view;
     }
 
@@ -59,11 +73,10 @@ public class LightFragment extends BaseFragment {
                  }
                 break;
             case R.id.switchOpenClose:
-                if(checked){
-                    openLight();
-                }else{
-                    closeLight();
+                if(checked != lampswitch){
+                    onSwitchClick();
                 }
+
                 break;
         }
     }
@@ -106,11 +119,17 @@ public class LightFragment extends BaseFragment {
         if (lampswitch==true){
             swithcBtn.setImageResource(R.mipmap.ic_off);
             lampswitch = false;
+            closeLight();
+
         }else {
             swithcBtn.setImageResource(R.mipmap.ic_on);
             lampswitch = true;
+            openLight();
         }
+
+        switchOpenClose.setChecked(lampswitch);
     }
+
 }
 
 
