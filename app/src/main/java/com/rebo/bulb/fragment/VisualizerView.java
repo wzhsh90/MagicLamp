@@ -1,4 +1,4 @@
-package com.rebo.bulb.bluetooth;
+package com.rebo.bulb.fragment;
 
 import android.annotation.SuppressLint;
 import android.content.Context;

@@ -99,6 +99,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private void connectToDevice(final BluetoothDevice device) {
+        stopScan();
         bleManager.connectDevice(device, new BleGattCallback() {
             @Override
             public void onConnectSuccess(BluetoothGatt gatt, int status) {
@@ -134,7 +135,6 @@ public class MainActivity extends BaseActivity {
             }
         }
     }
-
     private void initBleManager() {
         bleManager = BaseApplication.getBleManager();
     }
@@ -144,9 +144,10 @@ public class MainActivity extends BaseActivity {
     }
 
     private void stopScan() {
-        bleManager.stopScan(listScanCallback);
+        if(bleManager.isInScanning()){
+            bleManager.stopScan(listScanCallback);
+        }
     }
-
     private void initBluetooth() {
         listView.setOnItemClickListener(new OnItemClickListener());
         deviceListAdapter = new DeviceListAdapter(MainActivity.this, R.layout.listview_item_device);

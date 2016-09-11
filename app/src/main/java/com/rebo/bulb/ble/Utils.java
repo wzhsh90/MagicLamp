@@ -1,4 +1,4 @@
-package com.rebo.bulb.bluetooth;
+package com.rebo.bulb.ble;
 
 public class Utils {
 

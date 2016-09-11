@@ -20,7 +20,6 @@ import android.widget.TextView;
 
 import com.rebo.bulb.R;
 import com.rebo.bulb.activity.DeviceDetailActivity;
-import com.rebo.bulb.bluetooth.VisualizerView;
 import com.rebo.bulb.model.MusicModel;
 
 import java.io.IOException;
