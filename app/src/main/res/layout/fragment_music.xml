@@ -19,7 +19,7 @@
             android:orientation="vertical">
         </LinearLayout>
 
-        <com.rebo.bubl.activity.RoundImageView
+        <com.rebo.bulb.activity.RoundImageView
             android:layout_width="245px"
             android:layout_height="245px"
             android:layout_marginTop="80dp"

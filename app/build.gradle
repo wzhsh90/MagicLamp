@@ -34,4 +34,6 @@ dependencies {
     compile 'com.android.support:support-v4:18.0.0'
     compile 'com.jakewharton:butterknife:7.0.1'
     compile 'com.larswerkman:HoloColorPicker:1.5'
+    compile 'org.greenrobot:eventbus:latest.release'
+    compile 'com.google.guava:guava:latest.release'
 }
