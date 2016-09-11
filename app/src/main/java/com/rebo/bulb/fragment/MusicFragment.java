@@ -77,10 +77,6 @@ public class MusicFragment extends BaseFragment {
         mPlayButton = (ImageView)view.findViewById(R.id.iv_play);
         mMusicTitleTextView = (TextView)view.findViewById(R.id.tv_music_title);
 
-//        musicImageView = (ImageView)view.findViewById(R.id.iv_music);
-//        BreathAnim ba=new BreathAnim(getActivity(),R.anim.anim_breath,musicImageView);
-//        ba.start();
-
 
         mLinearLayout = (LinearLayout) view.findViewById(R.id.ll);
         seekBar = (SeekBar) view.findViewById(R.id.seekbar);
