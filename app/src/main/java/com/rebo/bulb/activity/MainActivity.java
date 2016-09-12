@@ -88,9 +88,10 @@ public class MainActivity extends BaseActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         }
         setNavigationTitle("设备");
+        spinAnimation();
         initBleManager();
         initBluetooth();
-        spinAnimation();
+
     }
 
     private void spinAnimation() {
