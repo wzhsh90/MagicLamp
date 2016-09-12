@@ -49,7 +49,7 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true"
-            android:text="飞得更高"/>
+            android:text="默认歌曲"/>
     </RelativeLayout>
 
     <RelativeLayout
