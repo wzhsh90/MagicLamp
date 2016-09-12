@@ -1,31 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_width="match_parent"
     android:layout_height="50dp"
-    android:descendantFocusability="blocksDescendants">
+    android:descendantFocusability="blocksDescendants"
+    android:orientation="vertical">
 
     <ImageView
+        android:id="@+id/iv_device"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/iv_device"
         android:layout_centerVertical="true"
-        android:src="@mipmap/ic_bulb"
-        android:layout_marginLeft="10dp" />
+        android:layout_marginLeft="10dp"
+        android:src="@mipmap/ic_bulb" />
 
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="标题"
-        android:layout_toRightOf="@+id/iv_device"
         android:layout_centerVertical="true"
         android:layout_marginLeft="6dp"
+        android:layout_toRightOf="@+id/iv_device"
+        android:text="标题"
         android:textSize="16dp" />
+
+    <ImageView
+        android:id="@+id/across_right_iv"
+        android:layout_width="16dip"
+        android:layout_height="16dip"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:layout_marginRight="16dp"
+        android:src="@drawable/arrow_right" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_alignParentBottom="true"
         android:layout_marginLeft="16dp"
-        android:background="@color/line_bg"/>
+        android:background="@color/line_bg" />
 </RelativeLayout>

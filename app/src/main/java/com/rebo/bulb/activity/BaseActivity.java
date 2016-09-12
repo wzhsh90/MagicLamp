@@ -17,7 +17,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.rebo.bulb.R;
-import butterknife.Bind;
+
+import butterknife.BindView;
 import butterknife.ButterKnife;
 
 /**
@@ -26,9 +27,9 @@ import butterknife.ButterKnife;
  * Created by wcy on 2015/11/26.
  */
 public abstract class BaseActivity extends AppCompatActivity {
-    @Bind(R.id.toolbar)
+    @BindView(R.id.toolbar)
     Toolbar mToolbar;
-    @Bind(R.id.tv_navigation_title)
+    @BindView(R.id.tv_navigation_title)
     TextView mNavigationTitle;
     protected Handler mHandler;
 

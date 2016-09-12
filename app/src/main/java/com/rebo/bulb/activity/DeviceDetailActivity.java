@@ -39,7 +39,7 @@ import com.rebo.bulb.utils.EventBusUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-import butterknife.Bind;
+import butterknife.BindViews;
 import butterknife.OnClick;
 
 /**
@@ -47,7 +47,7 @@ import butterknife.OnClick;
  */
 public class DeviceDetailActivity extends BaseActivity {
 
-    @Bind({R.id.tab_light, R.id.tab_music})
+    @BindViews({R.id.tab_light, R.id.tab_music})
     List<RadioButton> mTabs;
 
     ListView mMusicListView;

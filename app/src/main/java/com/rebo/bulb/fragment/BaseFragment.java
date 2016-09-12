@@ -1,29 +1,28 @@
 package com.rebo.bulb.fragment;
 
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
-
-import butterknife.ButterKnife;
+import android.support.v4.app.Fragment;
 
 /**
  * Created by guodunsong on 16/7/8.
  */
-public abstract class BaseFragment extends Fragment{
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
-
+public abstract class BaseFragment extends Fragment {
     //fragment 当前状态是否可见
     protected boolean isVisible;
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+    }
+
+    @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
-        if (getUserVisibleHint()){
+        if (getUserVisibleHint()) {
             isVisible = true;
             onVisible();
-        }else {
+        } else {
             isVisible = false;
             onInVisible();
         }
@@ -32,14 +31,14 @@ public abstract class BaseFragment extends Fragment{
     /**
      * 可见
      */
-    protected void onVisible(){
+    protected void onVisible() {
         lazyLoad();
     }
 
     /**
      * 不可见
      */
-    protected void onInVisible(){
+    protected void onInVisible() {
 
     }
 
@@ -52,6 +51,5 @@ public abstract class BaseFragment extends Fragment{
     @Override
     public void onDestroy() {
         super.onDestroy();
-        ButterKnife.unbind(this);
     }
 }

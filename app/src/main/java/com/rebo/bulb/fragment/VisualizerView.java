@@ -201,7 +201,12 @@ public class VisualizerView extends View {
         mTask = new MyTimerTask(updateHandler);
         timer.schedule(mTask, 0, 10);
     }
-
+    public void stop(){
+        if (mTask != null) {
+            mTask.cancel();
+            mTask = null;
+        }
+    }
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -258,7 +263,7 @@ public class VisualizerView extends View {
         }
 
         final int baseX = (getWidth() - 2 * Padding) / mSpectrumNum;
-        final int height = getHeight();
+        final int height = getHeight()+10;
         r = baseX / 2;
 
         // 绘制频谱

@@ -42,7 +42,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import butterknife.Bind;
+import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
@@ -69,7 +69,7 @@ public class MusicFragment extends BaseFragment {
     private final ConcurrentLinkedQueue<byte[]> commandQueue = new ConcurrentLinkedQueue<byte[]>();
     private boolean bleProcessing;
 
-    @Bind(R.id.iv_dvd)
+    @BindView(R.id.iv_dvd)
     ImageView dvdImageView;
 
 
@@ -84,6 +84,7 @@ public class MusicFragment extends BaseFragment {
             handler.postDelayed(updateThread, 100);
         }
     };
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void handlerEventBus(JSONObject jsonObject) {
         if (null != jsonObject) {
@@ -100,6 +101,7 @@ public class MusicFragment extends BaseFragment {
             }
         }
     }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -112,13 +114,10 @@ public class MusicFragment extends BaseFragment {
 
         mLinearLayout = (LinearLayout) view.findViewById(R.id.ll);
         seekBar = (SeekBar) view.findViewById(R.id.seekbar);
-        // Create the MediaPlayer
+
 
         mMediaPlayer = MediaPlayer.create(getActivity(), R.raw.a);
-//        mMediaPlayer = new MediaPlayer();
-        Log.d(TAG,
-                "MediaPlayer audio session ID: "
-                        + mMediaPlayer.getAudioSessionId());
+        Log.d(TAG, "MediaPlayer audio session ID: " + mMediaPlayer.getAudioSessionId());
 
         seekBar.setMax(mMediaPlayer.getDuration());
         setupVisualizerFxAndUI();
@@ -165,19 +164,25 @@ public class MusicFragment extends BaseFragment {
                 // TODO Auto-generated method stub
             }
         });
-
-        //初始化歌曲
+        initSongs();
+        pause();
+        spinAnimation();
+        return view;
+    }
+    //初始化歌曲
+    private void initSongs() {
         DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
         List<MusicModel> list = parentActivity.getData();
-        playMusic(list.get(0));
-        pause();
+        if (!list.isEmpty()) {
+            playMusic(list.get(0));
+        }
+    }
 
+    private void spinAnimation() {
         //专辑旋转动画
         operatingAnim = AnimationUtils.loadAnimation(getActivity(), R.anim.anim_rotate);
         LinearInterpolator linearInterpolator = new LinearInterpolator();
         operatingAnim.setInterpolator(linearInterpolator);
-
-        return view;
     }
 
     @Override
@@ -202,6 +207,12 @@ public class MusicFragment extends BaseFragment {
     @Override
     public void onDestroy() {
         EventBusUtil.unRegisterEvent(this);
+        mVisualizerView.stop();
+        handler.removeCallbacks(updateThread);
+        if(null!=mMediaPlayer){
+            mMediaPlayer.pause();
+        }
+
         super.onDestroy();
     }
 
@@ -232,15 +243,19 @@ public class MusicFragment extends BaseFragment {
                 new Visualizer.OnDataCaptureListener() {
                     public void onWaveFormDataCapture(Visualizer visualizer,
                                                       byte[] bytes, int samplingRate) {
-                        mVisualizerView.updateVisualizer(bytes); // 按照波形来画图
-                        if(musicPlaying()){
+
+                        if (musicPlaying()) {
+                            mVisualizerView.updateVisualizer(bytes); // 按照波形来画图
                             writeWaveData(bytes);
                         }
                     }
+
                     // 这个回调应该采集的是快速傅里叶变换有关的数据
                     public void onFftDataCapture(Visualizer visualizer,
                                                  byte[] fft, int samplingRate) {
-                        mVisualizerView.updateVisualizer(fft);
+                        if (musicPlaying()) {
+                            mVisualizerView.updateVisualizer(fft);
+                        }
                     }
                 }, maxCR / 2, true, true);
     }
@@ -269,7 +284,7 @@ public class MusicFragment extends BaseFragment {
         if (commandQueue.isEmpty()) {
             return;
         }
-        if(!musicPlaying()){
+        if (!musicPlaying()) {
             commandQueue.clear();
             return;
         }
@@ -297,7 +312,7 @@ public class MusicFragment extends BaseFragment {
                 new BleCharacterCallback() {
                     @Override
                     public void onSuccess(BluetoothGattCharacteristic characteristic) {
-                        EventBusUtil.postEvent(AppConst.BLUE_MUSIC_WRITE_SUC,"");
+                        EventBusUtil.postEvent(AppConst.BLUE_MUSIC_WRITE_SUC, "");
 //                        Log.d(TAG, "写特征值成功: " + '\n' + Arrays.toString(characteristic.getValue()));
                     }
 
@@ -336,12 +351,18 @@ public class MusicFragment extends BaseFragment {
             e.printStackTrace();
         }
     }
-    public boolean musicPlaying(){
-        boolean flag=false;
-        flag=null!=mMediaPlayer&&mMediaPlayer.isPlaying();
-        return  flag;
-    }
 
+    public boolean musicPlaying() {
+        boolean flag = false;
+        flag = null != mMediaPlayer && mMediaPlayer.isPlaying();
+        return flag;
+    }
+    private void setSeekBarShow(){
+        if(seekBar.getVisibility()!=View.VISIBLE){
+            seekBar.setVisibility(View.VISIBLE);
+        }
+
+    }
     /**
      * 播放暂停
      */
@@ -353,6 +374,7 @@ public class MusicFragment extends BaseFragment {
         if (mMediaPlayer.isPlaying()) {
             pause();
         } else {
+            setSeekBarShow();
             play();
         }
     }
@@ -365,7 +387,8 @@ public class MusicFragment extends BaseFragment {
     public void onPlayPrevious() {
         DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
         List<MusicModel> list = parentActivity.getData();
-        for (int i = 0; i < list.size(); i++) {
+        int len=list.size();
+        for (int i = 0; i <len ; i++) {
             MusicModel musicModel = list.get(i);
             if (musicModel.getMusicId() == curMusicModel.getMusicId()) {
                 if ((i - 1) < 0) {
@@ -373,6 +396,7 @@ public class MusicFragment extends BaseFragment {
                 } else {
                     curMusicModel = list.get(i - 1);
                 }
+                setSeekBarShow();
                 playMusic(curMusicModel);
                 break;
             }
@@ -386,7 +410,8 @@ public class MusicFragment extends BaseFragment {
     public void onPlayNext() {
         DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
         List<MusicModel> list = parentActivity.getData();
-        for (int i = 0; i < list.size(); i++) {
+        int len=list.size();
+        for (int i = 0; i < len; i++) {
             MusicModel musicModel = list.get(i);
             if (musicModel.getMusicId() == curMusicModel.getMusicId()) {
                 if (i + 1 == list.size()) {
@@ -394,6 +419,7 @@ public class MusicFragment extends BaseFragment {
                 } else {
                     curMusicModel = list.get(i + 1);
                 }
+                setSeekBarShow();
                 playMusic(curMusicModel);
                 break;
             }

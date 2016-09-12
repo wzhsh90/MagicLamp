@@ -1,7 +1,6 @@
 package com.rebo.bulb.adapter;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -68,10 +67,7 @@ public abstract class CommonAdapter<T> extends BaseAdapter{
     public View getView(int position, View convertView, ViewGroup parent) {
         //从ViewHolder中获取控件view，若为空则创建
         final ViewHolder viewHolder = getViewHolder(position, convertView,parent);
-
-        Log.i("dunsong.guo", position+"");
         convert(viewHolder, getItem(position));
-
         return viewHolder.getConvertView();
 
 

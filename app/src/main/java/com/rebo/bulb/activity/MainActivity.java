@@ -39,7 +39,7 @@ import org.json.JSONObject;
 
 import java.util.Arrays;
 
-import butterknife.Bind;
+import butterknife.BindView;
 import butterknife.OnClick;
 
 
@@ -47,17 +47,17 @@ public class MainActivity extends BaseActivity {
 
     private static final String TAG = "magic_ble";
 
-    @Bind(R.id.lv_device)
+    @BindView(R.id.lv_device)
     ListView listView;
-    @Bind(R.id.rl_empty)
+    @BindView(R.id.rl_empty)
     RelativeLayout emptyRelativeLayout;
     BluetoothAdapter mBluetoothAdapter;
-    @Bind(R.id.tv_empty)
+    @BindView(R.id.tv_empty)
     TextView emptyView;
 
-    @Bind(R.id.iv_lamp)
+    @BindView(R.id.iv_lamp)
     ImageView lampImageView;
-    @Bind(R.id.tv_home_title)
+    @BindView(R.id.tv_home_title)
     TextView titleTextView;
 
     private Animation operatingAnim;
@@ -239,11 +239,13 @@ public class MainActivity extends BaseActivity {
 
     @OnClick({R.id.iv_lamp})
     public void onLampImageViewClick() {
-        if (bleManager.isInScanning()) {
-            stopScan();
-        } else {
-            scanBleDevice();
+        if(bleManager.isSupportBle()&&bleManager.isBlueEnable()){
+            if (bleManager.isInScanning()) {
+                stopScan();
+            } else {
+                scanBleDevice();
 
+            }
         }
     }
 

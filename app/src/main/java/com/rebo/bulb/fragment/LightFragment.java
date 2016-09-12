@@ -19,7 +19,7 @@ import com.rebo.bulb.BaseApplication;
 import com.rebo.bulb.R;
 import com.rebo.bulb.ble.BleConst;
 
-import butterknife.Bind;
+import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnCheckedChanged;
 import butterknife.OnClick;
@@ -29,17 +29,17 @@ import butterknife.OnClick;
  */
 public class LightFragment extends BaseFragment {
 
-    @Bind(R.id.opacitybar)
+    @BindView(R.id.opacitybar)
     OpacityBar opacityBar;
 
-    @Bind(R.id.colorPicker)
+    @BindView(R.id.colorPicker)
     ColorPicker colorPicker;
 
-    @Bind(R.id.btn_switch)
+    @BindView(R.id.btn_switch)
     ImageView swithcBtn;
 
 
-    @Bind(R.id.switchOpenClose)
+    @BindView(R.id.switchOpenClose)
     Switch switchOpenClose;
     private Boolean lampswitch;
 
