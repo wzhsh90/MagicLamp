@@ -118,7 +118,7 @@ public class MainActivity extends BaseActivity {
                         bleConnFail(jsonObject.getString("content"));
                         break;
                     case AppConst.BLUE_STOP_SCAN:
-                        stopScanAnim();
+                        stopTimeout();
                         break;
                 }
             } catch (JSONException e) {
@@ -126,7 +126,10 @@ public class MainActivity extends BaseActivity {
             }
         }
     }
-
+    private void stopTimeout(){
+        scanNoDevice();
+        stopScanAnim();
+    }
     @Override
     protected void setListener() {
     }
