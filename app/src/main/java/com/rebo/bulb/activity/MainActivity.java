@@ -153,11 +153,13 @@ public class MainActivity extends BaseActivity {
             scanBleDevice();
         }
     }
-
+    private void resetEmptyData(String msg){
+        emptyRelativeLayout.setVisibility(View.VISIBLE);
+        emptyView.setText(msg);
+    }
     private void onBlueOff() {
         if (bleManager.isSupportBle()) {
-            emptyRelativeLayout.setVisibility(View.VISIBLE);
-            emptyView.setText("请打开手机蓝牙");
+            resetEmptyData("请打开手机蓝牙");
             clearDeviceListData();
         }
     }
@@ -223,6 +225,13 @@ public class MainActivity extends BaseActivity {
         stopScanAnim();
         if (bleManager.isInScanning()) {
             bleManager.stopScan(listScanCallback);
+        }
+        scanNoDevice();
+
+    }
+    private void scanNoDevice(){
+        if(deviceListAdapter.getCount()==0){
+            resetEmptyData("暂无数据");
         }
     }
 
