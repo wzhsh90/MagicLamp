@@ -146,6 +146,9 @@ public class MainActivity extends BaseActivity {
 
     private void onBlueOn() {
         if (bleManager.isSupportBle()) {
+            if(emptyView.getVisibility()==View.VISIBLE){
+                emptyView.setText("暂无数据");
+            }
             stopScan();
             scanBleDevice();
         }
@@ -155,8 +158,7 @@ public class MainActivity extends BaseActivity {
         if (bleManager.isSupportBle()) {
             emptyRelativeLayout.setVisibility(View.VISIBLE);
             emptyView.setText("请打开手机蓝牙");
-            deviceListAdapter.clearData();
-            deviceListAdapter.notifyDataSetChanged();
+            clearDeviceListData();
         }
     }
 
@@ -207,7 +209,12 @@ public class MainActivity extends BaseActivity {
         bleManager = BaseApplication.getBleManager();
     }
 
+    private void clearDeviceListData(){
+        deviceListAdapter.clearData();
+        deviceListAdapter.notifyDataSetChanged();
+    }
     private void scanBleDevice() {
+        clearDeviceListData();
         startScanAnim();
         bleManager.scanDevice(listScanCallback);
     }

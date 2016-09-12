@@ -57,7 +57,7 @@ public class LightFragment extends BaseFragment {
             @Override
             public void onColorSelected(int color) {
                 Log.i("LightFragment", "------>color:" + color);
-//                writeColor(color);
+                writeColor(color);
             }
         });
         opacityBar.setOnTouchListener(new View.OnTouchListener() {
@@ -65,7 +65,7 @@ public class LightFragment extends BaseFragment {
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 if( MotionEvent.ACTION_UP==motionEvent.getAction()){
                     Log.i("LightFragment", "------>opacity:" + opacityBar.getOpacity());
-//                    writeOpacity(opacityBar.getOpacity());
+                    writeOpacity(opacityBar.getOpacity());
                     return true;
                 }
                 return false;
