@@ -10,7 +10,6 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomSheetDialog;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
@@ -53,8 +52,8 @@ public class DeviceDetailActivity extends BaseActivity {
     ListView mMusicListView;
     MusicListAdapter musicListAdapter;
 
-    private Fragment tabLight;
-    private Fragment tabMusic;
+    private LightFragment tabLight;
+    private MusicFragment tabMusic;
     private Integer selectedIndex;
     private final static int TAB_MUSIC = 1;
     private final static int TAB_LIGHT = 0;
@@ -69,7 +68,6 @@ public class DeviceDetailActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_detail);
         this.setNavigationTitle("设备名称");
-        setSelect(TAB_MUSIC);
         setSelect(TAB_LIGHT);
         Bundle bundle = getIntent().getExtras();
         device = (BluetoothDevice) bundle.get("device");
@@ -150,11 +148,11 @@ public class DeviceDetailActivity extends BaseActivity {
                 if (ContextCompat.checkSelfPermission(DeviceDetailActivity.this, Manifest.permission.RECORD_AUDIO)
                         == PackageManager.PERMISSION_GRANTED) {
                     setSelect(TAB_MUSIC);
+//                    tabMusic.setWaveUI();
                 } else {
                     Toast.makeText(DeviceDetailActivity.this, "请开启声音权限", Toast.LENGTH_LONG).show();
                     ActivityCompat.requestPermissions(DeviceDetailActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, RECORD_AUDIO_REQUEST_CODE);
                 }
-
                 break;
         }
     }

@@ -259,12 +259,11 @@ public class MainActivity extends BaseActivity {
 
     @OnClick({R.id.iv_lamp})
     public void onLampImageViewClick() {
-        if(bleManager.isSupportBle()&&bleManager.isBlueEnable()){
+        if(bleManager.isSupportBle() && bleManager.isBlueEnable()) {
             if (bleManager.isInScanning()) {
                 stopScan();
             } else {
                 scanBleDevice();
-
             }
         }
     }

@@ -89,7 +89,6 @@
 
         <SeekBar
             android:id="@+id/seekbar"
-            android:visibility="gone"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:indeterminateDrawable="@android:drawable/progress_indeterminate_horizontal"

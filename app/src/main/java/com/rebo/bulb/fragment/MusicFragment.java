@@ -52,7 +52,6 @@ import butterknife.OnClick;
 @SuppressLint("NewApi")
 public class MusicFragment extends BaseFragment {
 
-    //    private ImageView musicImageView;
     private static final String TAG = "MusicFragment";
 
     private static final float VISUALIZER_HEIGHT_DIP = 360f;
@@ -108,42 +107,64 @@ public class MusicFragment extends BaseFragment {
         View view = inflater.inflate(R.layout.fragment_music, null);
         ButterKnife.bind(this, view);
         EventBusUtil.registerEvent(this);
-        mPlayButton = (ImageView) view.findViewById(R.id.iv_play);
-        mMusicTitleTextView = (TextView) view.findViewById(R.id.tv_music_title);
+        mPlayButton = ButterKnife.findById(view, R.id.iv_play);
+        mMusicTitleTextView = ButterKnife.findById(view, R.id.tv_music_title);
+        mLinearLayout = ButterKnife.findById(view, R.id.ll);
+        seekBar = ButterKnife.findById(view, R.id.seekbar);
 
-
-        mLinearLayout = (LinearLayout) view.findViewById(R.id.ll);
-        seekBar = (SeekBar) view.findViewById(R.id.seekbar);
-
-
-        mMediaPlayer = MediaPlayer.create(getActivity(), R.raw.a);
-        Log.d(TAG, "MediaPlayer audio session ID: " + mMediaPlayer.getAudioSessionId());
-
-        seekBar.setMax(mMediaPlayer.getDuration());
-        setupVisualizerFxAndUI();
-        mVisualizer.setEnabled(true);
-
+        initMediaPlayer();
+        setWaveUI();
         // 设置了均衡器就与音量大小无关拉
+        setEqualizer();
+        initCompletionListener();
+        setWindow();
+        startMediaPlayer();
+        handler.post(updateThread);
+        setSeekBarListener();
+        initSongs();
+        pause();
+        spinAnimation();
+        return view;
+    }
+    private void setWindow(){
+        getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getActivity().setVolumeControlStream(AudioManager.STREAM_MUSIC);
+    }
+    private void setEqualizer() {
         mEqualizer = new Equalizer(0, mMediaPlayer.getAudioSessionId());
         mEqualizer.setEnabled(true);
+    }
 
+    private void startMediaPlayer() {
+        mMediaPlayer.start();
+    }
+
+    private void setVisualizerEnable(boolean flag) {
+        if(null!=mVisualizer) {
+            mVisualizer.setEnabled(flag);
+        }
+    }
+
+    private void initCompletionListener() {
         mMediaPlayer
                 .setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                     public void onCompletion(MediaPlayer mediaPlayer) {
-                        mVisualizer.setEnabled(false);
+                        setVisualizerEnable(false);
                         getActivity().getWindow().clearFlags(
                                 WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                         getActivity().setVolumeControlStream(AudioManager.STREAM_SYSTEM);
 
                     }
                 });
+    }
 
-        getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        getActivity().setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        mMediaPlayer.start();
+    private void initMediaPlayer() {
+        mMediaPlayer = MediaPlayer.create(getActivity(), R.raw.a);
+        seekBar.setMax(mMediaPlayer.getDuration());
+        Log.d(TAG, "MediaPlayer audio session ID: " + mMediaPlayer.getAudioSessionId());
+    }
 
-        handler.post(updateThread);
-
+    private void setSeekBarListener() {
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress,
@@ -156,19 +177,14 @@ public class MusicFragment extends BaseFragment {
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-                // TODO Auto-generated method stub
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                // TODO Auto-generated method stub
             }
         });
-        initSongs();
-        pause();
-        spinAnimation();
-        return view;
     }
+
     //初始化歌曲
     private void initSongs() {
         DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
@@ -209,7 +225,7 @@ public class MusicFragment extends BaseFragment {
         EventBusUtil.unRegisterEvent(this);
         mVisualizerView.stop();
         handler.removeCallbacks(updateThread);
-        if(null!=mMediaPlayer){
+        if (null != mMediaPlayer) {
             mMediaPlayer.pause();
         }
 
@@ -220,8 +236,15 @@ public class MusicFragment extends BaseFragment {
     protected void lazyLoad() {
     }
 
+    public void setWaveUI() {
+        setupVisualizerFxAndUI();
+        setVisualizerEnable(true);
+    }
 
     private void setupVisualizerFxAndUI() {
+        if (null != mVisualizerView) {
+            return;
+        }
         mVisualizerView = new VisualizerView(getContext());
         mVisualizerView.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.FILL_PARENT,
@@ -232,7 +255,7 @@ public class MusicFragment extends BaseFragment {
         mVisualizerView.setmHeight(8);// 让水位处于最高振幅
         mLinearLayout.addView(mVisualizerView);
 
-        final int maxCR = Visualizer.getMaxCaptureRate();
+        int maxCR = Visualizer.getMaxCaptureRate();
         // 实例化Visualizer，参数SessionId可以通过MediaPlayer的对象获得
         mVisualizer = new Visualizer(mMediaPlayer.getAudioSessionId());
         // 设置需要转换的音乐内容长度，专业的说这就是采样,该采样值一般为2的指数倍
@@ -243,9 +266,8 @@ public class MusicFragment extends BaseFragment {
                 new Visualizer.OnDataCaptureListener() {
                     public void onWaveFormDataCapture(Visualizer visualizer,
                                                       byte[] bytes, int samplingRate) {
-
+                        mVisualizerView.updateVisualizer(bytes); // 按照波形来画图
                         if (musicPlaying()) {
-                            mVisualizerView.updateVisualizer(bytes); // 按照波形来画图
                             writeWaveData(bytes);
                         }
                     }
@@ -253,8 +275,9 @@ public class MusicFragment extends BaseFragment {
                     // 这个回调应该采集的是快速傅里叶变换有关的数据
                     public void onFftDataCapture(Visualizer visualizer,
                                                  byte[] fft, int samplingRate) {
+                        mVisualizerView.updateVisualizer(fft);
                         if (musicPlaying()) {
-                            mVisualizerView.updateVisualizer(fft);
+
                         }
                     }
                 }, maxCR / 2, true, true);
@@ -357,12 +380,6 @@ public class MusicFragment extends BaseFragment {
         flag = null != mMediaPlayer && mMediaPlayer.isPlaying();
         return flag;
     }
-    private void setSeekBarShow(){
-        if(seekBar.getVisibility()!=View.VISIBLE){
-            seekBar.setVisibility(View.VISIBLE);
-        }
-
-    }
     /**
      * 播放暂停
      */
@@ -374,7 +391,6 @@ public class MusicFragment extends BaseFragment {
         if (mMediaPlayer.isPlaying()) {
             pause();
         } else {
-            setSeekBarShow();
             play();
         }
     }
@@ -387,8 +403,8 @@ public class MusicFragment extends BaseFragment {
     public void onPlayPrevious() {
         DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
         List<MusicModel> list = parentActivity.getData();
-        int len=list.size();
-        for (int i = 0; i <len ; i++) {
+        int len = list.size();
+        for (int i = 0; i < len; i++) {
             MusicModel musicModel = list.get(i);
             if (musicModel.getMusicId() == curMusicModel.getMusicId()) {
                 if ((i - 1) < 0) {
@@ -396,7 +412,6 @@ public class MusicFragment extends BaseFragment {
                 } else {
                     curMusicModel = list.get(i - 1);
                 }
-                setSeekBarShow();
                 playMusic(curMusicModel);
                 break;
             }
@@ -410,7 +425,7 @@ public class MusicFragment extends BaseFragment {
     public void onPlayNext() {
         DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
         List<MusicModel> list = parentActivity.getData();
-        int len=list.size();
+        int len = list.size();
         for (int i = 0; i < len; i++) {
             MusicModel musicModel = list.get(i);
             if (musicModel.getMusicId() == curMusicModel.getMusicId()) {
@@ -419,7 +434,6 @@ public class MusicFragment extends BaseFragment {
                 } else {
                     curMusicModel = list.get(i + 1);
                 }
-                setSeekBarShow();
                 playMusic(curMusicModel);
                 break;
             }

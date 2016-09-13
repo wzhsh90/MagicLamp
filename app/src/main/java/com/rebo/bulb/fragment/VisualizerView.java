@@ -145,6 +145,7 @@ public class VisualizerView extends View {
     public VisualizerView(Context context) {
         super(context);
         init();
+        start();
     }
 
     private void init() {
@@ -186,13 +187,12 @@ public class VisualizerView extends View {
 
     }
 
-    @Override
-    public void onWindowFocusChanged(boolean hasWindowFocus) {
-        super.onWindowFocusChanged(hasWindowFocus);
-        // 开始波动
-        start();
-    }
-
+//    @Override
+//    public void onWindowFocusChanged(boolean hasWindowFocus) {
+//        super.onWindowFocusChanged(hasWindowFocus);
+//        // 开始波动
+//        start();
+//    }
     private void start() {
         if (mTask != null) {
             mTask.cancel();
