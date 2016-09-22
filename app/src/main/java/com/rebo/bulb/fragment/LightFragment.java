@@ -200,6 +200,7 @@ public class LightFragment extends BaseFragment {
         } else {
             swithcBtn.setImageResource(R.mipmap.ic_on);
             lampswitch = true;
+
             openLight();
         }
 

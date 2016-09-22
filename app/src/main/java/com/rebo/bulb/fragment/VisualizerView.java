@@ -177,7 +177,7 @@ public class VisualizerView extends View {
         byte[] model = new byte[fft.length / 2 + 1];
 
         model[0] = (byte) Math.abs(fft[0]);
-        for (int i = 2, j = 1; j < mSpectrumNum;) {
+        for (int i = 2, j = 1; j < mSpectrumNum; ) {
             model[j] = (byte) Math.hypot(fft[i], fft[i + 1]);
             i += 2;
             j++;
@@ -187,7 +187,7 @@ public class VisualizerView extends View {
 
     }
 
-//    @Override
+    //    @Override
 //    public void onWindowFocusChanged(boolean hasWindowFocus) {
 //        super.onWindowFocusChanged(hasWindowFocus);
 //        // 开始波动
@@ -201,12 +201,14 @@ public class VisualizerView extends View {
         mTask = new MyTimerTask(updateHandler);
         timer.schedule(mTask, 0, 10);
     }
-    public void stop(){
+
+    public void stop() {
         if (mTask != null) {
             mTask.cancel();
             mTask = null;
         }
     }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -261,12 +263,17 @@ public class VisualizerView extends View {
         if (mBytes == null) {
             return;
         }
-
         final int baseX = (getWidth() - 2 * Padding) / mSpectrumNum;
-        final int height = getHeight()+10;
+        final int height = getHeight() + 10;
         r = baseX / 2;
-
         // 绘制频谱
+        drawRect(canvas, height, baseX);
+
+        // 画底部的波浪
+        drawWave(canvas, height);
+    }
+
+    private void drawRect(Canvas canvas, int height, int baseX) {
         for (int i = 0; i < mSpectrumNum; i++) {
             if (mBytes[i] < 0) {
                 mBytes[i] = 127;
@@ -341,20 +348,9 @@ public class VisualizerView extends View {
 
         RcenterX = getWidth() / 2;
         RcenterY = R;
+    }
 
-        // 这两个圆只是用来参考坐标的，没有必要画出来
-        // 绘制顶部大圆
-        // cricleR = new RectF(getWidth() / 2 - R, 0, getWidth() / 2 + R, R *
-        // 2);
-        // canvas.drawOval(cricleR, mPaint);
-
-        // 绘制顶部小圆
-        // cricleM = new RectF(getWidth() / 2 - Rm, 2 * R - 2 * Rm, getWidth() /
-        // 2
-        // + Rm, 2 * R);
-        // canvas.drawOval(cricleM, mPaint);
-
-        // 画底部的波浪
+    private void drawWave(Canvas canvas, int height) {
         mWavePath.reset();
         int i = 0;
         mWavePath.moveTo(mPointsList.get(0).getX(), mPointsList.get(0).getY());
@@ -374,7 +370,6 @@ public class VisualizerView extends View {
      * 波浪的状态类
      *
      * @author Administrator
-     *
      */
     public class Statue {
         private int bollsNum;// 抛出的小球数
@@ -559,7 +554,6 @@ public class VisualizerView extends View {
      * 坐标点的实体类
      *
      * @author Administrator
-     *
      */
 
     class Point {

@@ -8,16 +8,18 @@ import android.widget.TextView;
 import com.google.common.base.Strings;
 import com.rebo.bulb.R;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Created by guodunsong on 16/7/9.
  */
 public class DeviceListAdapter extends CommonAdapter<BluetoothDevice>{
-    private Context context;
     private TextView mTitleTextView;
+    private static final Map<String, String> macMap = new ConcurrentHashMap<String, String>();
 
     public DeviceListAdapter(Context context,int resource){
         super(context, resource);
-        this.context = context;
     }
 
     @Override
@@ -34,7 +36,8 @@ public class DeviceListAdapter extends CommonAdapter<BluetoothDevice>{
     }
 
     public void addDevice(BluetoothDevice device){
-        if(!mDatas.contains(device)){
+        if(!mDatas.contains(device)&&!macMap.containsKey(device.getAddress())){
+            macMap.put(device.getAddress(),"");
             mDatas.add(device);
         }
     }
