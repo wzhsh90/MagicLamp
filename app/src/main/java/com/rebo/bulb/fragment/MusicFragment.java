@@ -329,8 +329,8 @@ public class MusicFragment extends BaseFragment {
                                                       byte[] bytes, int samplingRate) {
                         mVisualizerView.updateVisualizer(bytes); // 按照波形来画图
                         if (musicPlaying()) {
-                            System.out.println(Arrays.toString(bytes));
-//                            writeWaveData(bytes);
+//                            System.out.println(Arrays.toString(bytes));
+                            writeWaveData(bytes);
                         }
                     }
 
