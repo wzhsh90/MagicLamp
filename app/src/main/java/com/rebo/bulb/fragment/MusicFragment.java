@@ -436,7 +436,7 @@ public class MusicFragment extends BaseFragment {
     @Override
     public void onPause() {
         super.onPause();
-        pause();
+//        pause();
         if (getActivity().isFinishing() && mMediaPlayer != null) {
             handler.removeCallbacks(updateThread);
             mMediaPlayer.reset();// 重置
