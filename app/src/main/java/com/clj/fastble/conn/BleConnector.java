@@ -240,7 +240,6 @@ public class BleConnector {
             return false;
         }
         handleCharacteristicWriteCallback(bleCallback, uuid_write);
-
         character.setValue(data);
         return handleAfterInitialed(getBluetoothGatt().writeCharacteristic(character), bleCallback);
     }

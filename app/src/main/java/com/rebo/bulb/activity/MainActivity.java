@@ -1,5 +1,6 @@
 package com.rebo.bulb.activity;
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -30,6 +31,8 @@ import com.rebo.bulb.BaseApplication;
 import com.rebo.bulb.R;
 import com.rebo.bulb.adapter.DeviceListAdapter;
 import com.rebo.bulb.ble.BleConst;
+import com.rebo.bulb.permission.PermissionCallBack;
+import com.rebo.bulb.permission.PermissionUtil;
 import com.rebo.bulb.utils.EventBusUtil;
 
 import org.greenrobot.eventbus.Subscribe;
@@ -38,6 +41,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.OnClick;
@@ -126,10 +130,12 @@ public class MainActivity extends BaseActivity {
             }
         }
     }
-    private void stopTimeout(){
+
+    private void stopTimeout() {
         scanNoDevice();
         stopScanAnim();
     }
+
     @Override
     protected void setListener() {
     }
@@ -149,17 +155,19 @@ public class MainActivity extends BaseActivity {
 
     private void onBlueOn() {
         if (bleManager.isSupportBle()) {
-            if(emptyView.getVisibility()==View.VISIBLE){
+            if (emptyView.getVisibility() == View.VISIBLE) {
                 emptyView.setText("暂无数据");
             }
             stopScan();
             scanBleDevice();
         }
     }
-    private void resetEmptyData(String msg){
+
+    private void resetEmptyData(String msg) {
         emptyRelativeLayout.setVisibility(View.VISIBLE);
         emptyView.setText(msg);
     }
+
     private void onBlueOff() {
         if (bleManager.isSupportBle()) {
             resetEmptyData("请打开手机蓝牙");
@@ -200,6 +208,7 @@ public class MainActivity extends BaseActivity {
         intent.putExtras(bundle);
         MainActivity.this.startActivity(intent);
     }
+
     private final class OnItemClickListener implements AdapterView.OnItemClickListener {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
@@ -214,14 +223,24 @@ public class MainActivity extends BaseActivity {
         bleManager = BaseApplication.getBleManager();
     }
 
-    private void clearDeviceListData(){
+    private void clearDeviceListData() {
         deviceListAdapter.clearData();
         deviceListAdapter.notifyDataSetChanged();
     }
+
     private void scanBleDevice() {
-        clearDeviceListData();
-        startScanAnim();
-        bleManager.scanDevice(listScanCallback);
+        PermissionUtil.getInstance(BaseApplication.getContext()).requestPermissions(new PermissionCallBack() {
+            @Override
+            public void onGranted() {
+                clearDeviceListData();
+                startScanAnim();
+                bleManager.scanDevice(listScanCallback);
+            }
+
+            @Override
+            public void onDenied(List<String> permissions) {
+            }
+        }, Manifest.permission.ACCESS_COARSE_LOCATION);
     }
 
     private void stopScan() {
@@ -232,8 +251,9 @@ public class MainActivity extends BaseActivity {
         scanNoDevice();
 
     }
-    private void scanNoDevice(){
-        if(deviceListAdapter.getCount()==0){
+
+    private void scanNoDevice() {
+        if (deviceListAdapter.getCount() == 0) {
             resetEmptyData("暂无数据");
         }
     }
@@ -259,7 +279,7 @@ public class MainActivity extends BaseActivity {
 
     @OnClick({R.id.iv_lamp})
     public void onLampImageViewClick() {
-        if(bleManager.isSupportBle() && bleManager.isBlueEnable()) {
+        if (bleManager.isSupportBle() && bleManager.isBlueEnable()) {
             if (bleManager.isInScanning()) {
                 stopScan();
             } else {

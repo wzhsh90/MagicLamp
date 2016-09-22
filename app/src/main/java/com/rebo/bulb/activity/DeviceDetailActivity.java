@@ -3,16 +3,12 @@ package com.rebo.bulb.activity;
 import android.Manifest;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
 import android.support.design.widget.BottomSheetDialog;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -22,7 +18,6 @@ import android.widget.AdapterView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RadioButton;
-import android.widget.Toast;
 
 import com.clj.fastble.bluetooth.BleGattCallback;
 import com.clj.fastble.exception.BleException;
@@ -33,6 +28,8 @@ import com.rebo.bulb.adapter.MusicListAdapter;
 import com.rebo.bulb.fragment.LightFragment;
 import com.rebo.bulb.fragment.MusicFragment;
 import com.rebo.bulb.model.MusicModel;
+import com.rebo.bulb.permission.PermissionCallBack;
+import com.rebo.bulb.permission.PermissionUtil;
 import com.rebo.bulb.utils.EventBusUtil;
 
 import java.util.ArrayList;
@@ -73,24 +70,29 @@ public class DeviceDetailActivity extends BaseActivity {
         device = (BluetoothDevice) bundle.get("device");
         connectToDevice(device);
     }
+
     private void connectToDevice(final BluetoothDevice device) {
         BaseApplication.getBleManager().connectDevice(device, new BleGattCallback() {
             @Override
             public void onConnectSuccess(BluetoothGatt gatt, int status) {
                 gatt.discoverServices();
+                EventBusUtil.postEvent(AppConst.BLUE_CONN133, "");
             }
+
             @Override
             public void onServicesDiscovered(BluetoothGatt gatt, int status) {
                 Log.i(TAG, "服务被发现！");
             }
+
             @Override
             public void onConnectFailure(BleException exception) {
                 Log.i(TAG, "连接失败或连接中断：" + '\n' + exception.toString());
-                EventBusUtil.postEvent(AppConst.BLUE_CONN_FAIL,"连接失败或连接中断");
+                EventBusUtil.postEvent(AppConst.BLUE_CONN_FAIL, "连接失败或连接中断");
                 finish();
             }
         });
     }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         if (selectedIndex == 1) {
@@ -106,18 +108,6 @@ public class DeviceDetailActivity extends BaseActivity {
             showMusicList();
         }
         return res;
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == RECORD_AUDIO_REQUEST_CODE) {//请求声音权限
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                setSelect(TAB_MUSIC);
-            } else {
-                // Permission Denied
-            }
-        }
     }
 
     @Override
@@ -145,14 +135,16 @@ public class DeviceDetailActivity extends BaseActivity {
                 setSelect(TAB_LIGHT);
                 break;
             case R.id.tab_music:
-                if (ContextCompat.checkSelfPermission(DeviceDetailActivity.this, Manifest.permission.RECORD_AUDIO)
-                        == PackageManager.PERMISSION_GRANTED) {
-                    setSelect(TAB_MUSIC);
-//                    tabMusic.setWaveUI();
-                } else {
-                    Toast.makeText(DeviceDetailActivity.this, "请开启声音权限", Toast.LENGTH_LONG).show();
-                    ActivityCompat.requestPermissions(DeviceDetailActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, RECORD_AUDIO_REQUEST_CODE);
-                }
+                PermissionUtil.getInstance(BaseApplication.getContext()).requestPermissions(new PermissionCallBack() {
+                    @Override
+                    public void onGranted() {
+                        setSelect(TAB_MUSIC);
+                    }
+
+                    @Override
+                    public void onDenied(List<String> permissions) {
+                    }
+                }, Manifest.permission.RECORD_AUDIO);
                 break;
         }
     }

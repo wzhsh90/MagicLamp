@@ -33,4 +33,5 @@ dependencies {
     compile 'com.larswerkman:HoloColorPicker:1.5'
     compile 'org.greenrobot:eventbus:latest.release'
     compile 'com.google.guava:guava:latest.release'
+    compile 'com.mylhyl:acp:latest.release'
 }

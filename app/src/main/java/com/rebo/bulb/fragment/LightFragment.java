@@ -17,6 +17,7 @@ import com.larswerkman.holocolorpicker.ColorPicker;
 import com.larswerkman.holocolorpicker.OpacityBar;
 import com.rebo.bulb.BaseApplication;
 import com.rebo.bulb.R;
+import com.rebo.bulb.ble.BleCommand;
 import com.rebo.bulb.ble.BleConst;
 
 import butterknife.BindView;
@@ -63,7 +64,7 @@ public class LightFragment extends BaseFragment {
         opacityBar.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
-                if( MotionEvent.ACTION_UP==motionEvent.getAction()){
+                if (MotionEvent.ACTION_UP == motionEvent.getAction()) {
                     Log.i("LightFragment", "------>opacity:" + opacityBar.getOpacity());
                     writeOpacity(opacityBar.getOpacity());
                     return true;
@@ -115,18 +116,52 @@ public class LightFragment extends BaseFragment {
     }
 
     private void openLight() {
-        write("2");
+//        write("2");
+        write(BleCommand.getAllData(BleCommand.getHead(0, 0), BleCommand.lockOrUnlockBody(false)));
     }
 
     private void closeLight() {
-        write("1");
+        write(BleCommand.getAllData(BleCommand.getHead(0, 0), BleCommand.lockOrUnlockBody(true)));
+//        write("1");
     }
 
     private void writeColor(int color) {
-        write(String.valueOf(color));
+
+//        write(String.valueOf(color));
+        write(BleCommand.getAllData(BleCommand.getHead(0, 0), BleCommand.colorBody(0)));
     }
+
     private void writeOpacity(int opacity) {
-        write(String.valueOf(opacity));
+//        write(String.valueOf(opacity));
+        write(BleCommand.getAllData(BleCommand.getHead(0, 0), BleCommand.colorBody(opacity)));
+    }
+
+    private void write(final byte[] data) {
+        if (!BaseApplication.getBleManager().isConnected()) {
+            return;
+        }
+        BaseApplication.getBleManager().writeDevice(
+                BleConst.RX_SERVICE_UUID,
+                BleConst.RX_WRITE_UUID,
+                BleConst.UUID_CLIENT_CHARACTERISTIC_CONFIG_DESCRIPTOR,
+                data,
+                new BleCharacterCallback() {
+                    @Override
+                    public void onSuccess(BluetoothGattCharacteristic characteristic) {
+//                        Log.d(TAG, "写特征值成功: " + '\n' + Arrays.toString(characteristic.getValue()));
+                    }
+
+                    @Override
+                    public void onFailure(BleException exception) {
+                        int seq = BleCommand.getCurrentSeq(data);
+                        if (seq >= 1) {
+                            BleCommand.setCurrentSeq(data, seq - 1);
+                            write(data);
+                        }
+//                        Log.e(TAG, "写读特征值失败: " + '\n' + exception.toString());
+//                        bleManager.handleException(exception);
+                    }
+                });
     }
 
     private void write(String data) {
