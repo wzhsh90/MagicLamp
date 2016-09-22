@@ -199,7 +199,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private void connectToDevice(final BluetoothDevice device) {
-        stopScan();
+
         bleManager.closeBluetoothGatt();
         Toast.makeText(MainActivity.this, "正在连接...", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(MainActivity.this, DeviceDetailActivity.class);
@@ -207,6 +207,7 @@ public class MainActivity extends BaseActivity {
         bundle.putParcelable("device", device);
         intent.putExtras(bundle);
         MainActivity.this.startActivity(intent);
+        stopScan();
     }
 
     private final class OnItemClickListener implements AdapterView.OnItemClickListener {
@@ -229,7 +230,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private void scanBleDevice() {
-        PermissionUtil.getInstance(BaseApplication.getContext()).requestPermissions(new PermissionCallBack() {
+        PermissionUtil.getInstance(this).requestPermissions(new PermissionCallBack() {
             @Override
             public void onGranted() {
                 clearDeviceListData();

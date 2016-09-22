@@ -152,84 +152,89 @@ public class MusicFragment extends BaseFragment {
     }
 
     private void initMediaPlayer() {
-        DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
-        List<MusicModel> list = parentActivity.getData();
-        if (!list.isEmpty()) {
-            curMusicModel=list.get(0);
-            mMusicTitleTextView.setText(curMusicModel.getName());
-            mMediaPlayer = MediaPlayer.create(getActivity(), Uri.parse(curMusicModel.getPath()));
-        } else {
-            mMediaPlayer = MediaPlayer.create(getActivity(), R.raw.a);
-        }
-        mMediaPlayer
-                .setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                    public void onCompletion(MediaPlayer mediaPlayer) {
-                        setVisualizerEnable(false);
-                        getActivity().getWindow().clearFlags(
-                                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                        getActivity().setVolumeControlStream(AudioManager.STREAM_SYSTEM);
-
-                    }
-                });
-
-        mMediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-            @Override
-            public boolean onError(MediaPlayer mp, int what, int extra) {
-                Log.d(TAG, "OnError - Error code: " + what + " Extra code: " + extra);
-                switch (what) {
-                    case -1004:
-                        Log.d(TAG, "MEDIA_ERROR_IO");
-                        break;
-                    case -1007:
-                        Log.d(TAG, "MEDIA_ERROR_MALFORMED");
-                        break;
-                    case 200:
-                        Log.d(TAG, "MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK");
-                        break;
-                    case 100:
-                        Log.d(TAG, "MEDIA_ERROR_SERVER_DIED");
-                        break;
-                    case -110:
-                        Log.d(TAG, "MEDIA_ERROR_TIMED_OUT");
-                        break;
-                    case 1:
-                        Log.d(TAG, "MEDIA_ERROR_UNKNOWN");
-                        break;
-                    case -1010:
-                        Log.d(TAG, "MEDIA_ERROR_UNSUPPORTED");
-                        break;
-                }
-                switch (extra) {
-                    case 800:
-                        Log.d(TAG, "MEDIA_INFO_BAD_INTERLEAVING");
-                        break;
-                    case 702:
-                        Log.d(TAG, "MEDIA_INFO_BUFFERING_END");
-                        break;
-                    case 701:
-                        Log.d(TAG, "MEDIA_INFO_METADATA_UPDATE");
-                        break;
-                    case 802:
-                        Log.d(TAG, "MEDIA_INFO_METADATA_UPDATE");
-                        break;
-                    case 801:
-                        Log.d(TAG, "MEDIA_INFO_NOT_SEEKABLE");
-                        break;
-                    case 1:
-                        Log.d(TAG, "MEDIA_INFO_UNKNOWN");
-                        break;
-                    case 3:
-                        Log.d(TAG, "MEDIA_INFO_VIDEO_RENDERING_START");
-                        break;
-                    case 700:
-                        Log.d(TAG, "MEDIA_INFO_VIDEO_TRACK_LAGGING");
-                        break;
-                }
-                return false;
+        try{
+            DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
+            List<MusicModel> list = parentActivity.getData();
+            if (!list.isEmpty()) {
+                curMusicModel=list.get(0);
+                mMusicTitleTextView.setText(curMusicModel.getName());
+                mMediaPlayer = MediaPlayer.create(getActivity(), Uri.parse(curMusicModel.getPath()));
+            } else {
+                mMediaPlayer = MediaPlayer.create(getActivity(), R.raw.a);
             }
-        });
-        seekBar.setMax(mMediaPlayer.getDuration());
-        Log.d(TAG, "MediaPlayer audio session ID: " + mMediaPlayer.getAudioSessionId());
+            mMediaPlayer
+                    .setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                        public void onCompletion(MediaPlayer mediaPlayer) {
+                            setVisualizerEnable(false);
+                            getActivity().getWindow().clearFlags(
+                                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                            getActivity().setVolumeControlStream(AudioManager.STREAM_SYSTEM);
+
+                        }
+                    });
+
+            mMediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                @Override
+                public boolean onError(MediaPlayer mp, int what, int extra) {
+                    Log.d(TAG, "OnError - Error code: " + what + " Extra code: " + extra);
+                    switch (what) {
+                        case -1004:
+                            Log.d(TAG, "MEDIA_ERROR_IO");
+                            break;
+                        case -1007:
+                            Log.d(TAG, "MEDIA_ERROR_MALFORMED");
+                            break;
+                        case 200:
+                            Log.d(TAG, "MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK");
+                            break;
+                        case 100:
+                            Log.d(TAG, "MEDIA_ERROR_SERVER_DIED");
+                            break;
+                        case -110:
+                            Log.d(TAG, "MEDIA_ERROR_TIMED_OUT");
+                            break;
+                        case 1:
+                            Log.d(TAG, "MEDIA_ERROR_UNKNOWN");
+                            break;
+                        case -1010:
+                            Log.d(TAG, "MEDIA_ERROR_UNSUPPORTED");
+                            break;
+                    }
+                    switch (extra) {
+                        case 800:
+                            Log.d(TAG, "MEDIA_INFO_BAD_INTERLEAVING");
+                            break;
+                        case 702:
+                            Log.d(TAG, "MEDIA_INFO_BUFFERING_END");
+                            break;
+                        case 701:
+                            Log.d(TAG, "MEDIA_INFO_METADATA_UPDATE");
+                            break;
+                        case 802:
+                            Log.d(TAG, "MEDIA_INFO_METADATA_UPDATE");
+                            break;
+                        case 801:
+                            Log.d(TAG, "MEDIA_INFO_NOT_SEEKABLE");
+                            break;
+                        case 1:
+                            Log.d(TAG, "MEDIA_INFO_UNKNOWN");
+                            break;
+                        case 3:
+                            Log.d(TAG, "MEDIA_INFO_VIDEO_RENDERING_START");
+                            break;
+                        case 700:
+                            Log.d(TAG, "MEDIA_INFO_VIDEO_TRACK_LAGGING");
+                            break;
+                    }
+                    return false;
+                }
+            });
+            seekBar.setMax(mMediaPlayer.getDuration());
+            Log.d(TAG, "MediaPlayer audio session ID: " + mMediaPlayer.getAudioSessionId());
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
     }
 
     private void setSeekBarListener() {

@@ -135,59 +135,71 @@ public class DeviceDetailActivity extends BaseActivity {
                 setSelect(TAB_LIGHT);
                 break;
             case R.id.tab_music:
-                PermissionUtil.getInstance(BaseApplication.getContext()).requestPermissions(new PermissionCallBack() {
+                PermissionUtil.getInstance(this).requestPermissions(new PermissionCallBack() {
                     @Override
-                    public void onGranted() {
+                   public void onGranted() {
                         setSelect(TAB_MUSIC);
                     }
 
                     @Override
                     public void onDenied(List<String> permissions) {
                     }
-                }, Manifest.permission.RECORD_AUDIO);
+                }, Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.RECORD_AUDIO);
                 break;
         }
     }
 
-    private void setSelect(int i) {
-        selectedIndex = i;
-        if (i == 0) {
-            this.setNavigationTitle("光控");
-        } else if (i == 1) {
-            this.setNavigationTitle("音乐");
-        }
-
-        FragmentManager fm = getSupportFragmentManager();
-        FragmentTransaction transaction = fm.beginTransaction();
-        hideFragment(transaction);
-
-        // 把图片设置为亮的
-        // 设置内容区域
-        switch (i) {
-            case 0:
-                if (tabLight == null) {
-                    tabLight = new LightFragment();
-                    transaction.add(R.id.id_content, tabLight);
-                } else {
-                    transaction.show(tabLight);
-                }
-                mTabs.get(0).setCompoundDrawablesWithIntrinsicBounds(0, R.mipmap.ic_control_pressed, 0, 0);
-                break;
-            case 1:
-                if (tabMusic == null) {
-                    tabMusic = new MusicFragment();
-                    transaction.add(R.id.id_content, tabMusic);
-                } else {
-                    transaction.show(tabMusic);
+    private void setSelect(final int i) {
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                selectedIndex = i;
+                if (i == 0) {
+                    setNavigationTitle("光控");
+                } else if (i == 1) {
+                    setNavigationTitle("音乐");
                 }
 
-                mTabs.get(1).setCompoundDrawablesWithIntrinsicBounds(0, R.mipmap.ic_music_pressed, 0, 0);
-                break;
-            default:
-                break;
-        }
-        transaction.commit();
-        invalidateOptionsMenu();
+                FragmentManager fm = getSupportFragmentManager();
+                FragmentTransaction transaction = fm.beginTransaction();
+                hideFragment(transaction);
+
+                // 把图片设置为亮的
+                // 设置内容区域
+                switch (i) {
+                    case 0:
+                        if (tabLight == null) {
+                            tabLight = new LightFragment();
+                            transaction.add(R.id.id_content, tabLight);
+                        } else {
+                            transaction.show(tabLight);
+                        }
+                        mTabs.get(0).setCompoundDrawablesWithIntrinsicBounds(0, R.mipmap.ic_control_pressed, 0, 0);
+                        break;
+                    case 1:
+                        if (tabMusic == null) {
+                            tabMusic = new MusicFragment();
+                            transaction.add(R.id.id_content, tabMusic);
+                        } else {
+                            transaction.show(tabMusic);
+                        }
+
+                        mTabs.get(1).setCompoundDrawablesWithIntrinsicBounds(0, R.mipmap.ic_music_pressed, 0, 0);
+                        break;
+                    default:
+                        break;
+                }
+                try{
+                    transaction.commitAllowingStateLoss();
+                    invalidateOptionsMenu();
+
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
+            }
+        });
+
     }
 
     private void hideFragment(FragmentTransaction transaction) {
