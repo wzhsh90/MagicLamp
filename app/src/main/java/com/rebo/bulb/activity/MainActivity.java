@@ -286,6 +286,11 @@ public class MainActivity extends BaseActivity {
                 scanBleDevice();
             }
         }
+//        Intent intent = new Intent(MainActivity.this, DeviceDetailActivity.class);
+//        Bundle bundle = new Bundle();
+//        bundle.putParcelable("device",null);
+//        intent.putExtras(bundle);
+//        MainActivity.this.startActivity(intent);
     }
 
     public void startScanAnim() {

@@ -43,5 +43,6 @@ public class DeviceListAdapter extends CommonAdapter<BluetoothDevice>{
     }
     public void clearData(){
         this.mDatas.clear();
+        macMap.clear();
     }
 }

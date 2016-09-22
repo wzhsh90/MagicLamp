@@ -96,7 +96,7 @@ public class MusicFragment extends BaseFragment {
                         commandCompleted();
                         break;
                     case AppConst.BLUE_CONN133:
-                        bleProcessing=false;
+                        bleProcessing = false;
                         break;
                 }
             } catch (JSONException e) {
@@ -109,47 +109,58 @@ public class MusicFragment extends BaseFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_music, null);
-        bleProcessing=false;
+        releaseMedia();
+        bleProcessing = false;
         ButterKnife.bind(this, view);
         EventBusUtil.registerEvent(this);
         mPlayButton = ButterKnife.findById(view, R.id.iv_play);
         mMusicTitleTextView = ButterKnife.findById(view, R.id.tv_music_title);
         mLinearLayout = ButterKnife.findById(view, R.id.ll);
         seekBar = ButterKnife.findById(view, R.id.seekbar);
-
+        setWindow();
         initMediaPlayer();
         setWaveUI();
         // 设置了均衡器就与音量大小无关拉
         setEqualizer();
-        initCompletionListener();
-        setWindow();
-       // startMediaPlayer();
         handler.post(updateThread);
         setSeekBarListener();
-        //pause();
         spinAnimation();
         return view;
     }
-    private void setWindow(){
+
+    private void setWindow() {
         getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         getActivity().setVolumeControlStream(AudioManager.STREAM_MUSIC);
     }
+
     private void setEqualizer() {
         mEqualizer = new Equalizer(0, mMediaPlayer.getAudioSessionId());
         mEqualizer.setEnabled(true);
     }
 
-    private void startMediaPlayer() {
-        mMediaPlayer.start();
-    }
-
     private void setVisualizerEnable(boolean flag) {
-        if(null!=mVisualizer) {
+        if (null != mVisualizer) {
             mVisualizer.setEnabled(flag);
         }
     }
 
-    private void initCompletionListener() {
+    private void releaseMedia() {
+        if (null != mMediaPlayer) {
+            mMediaPlayer.reset();
+            mMediaPlayer.release();
+        }
+    }
+
+    private void initMediaPlayer() {
+        DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
+        List<MusicModel> list = parentActivity.getData();
+        if (!list.isEmpty()) {
+            curMusicModel=list.get(0);
+            mMusicTitleTextView.setText(curMusicModel.getName());
+            mMediaPlayer = MediaPlayer.create(getActivity(), Uri.parse(curMusicModel.getPath()));
+        } else {
+            mMediaPlayer = MediaPlayer.create(getActivity(), R.raw.a);
+        }
         mMediaPlayer
                 .setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                     public void onCompletion(MediaPlayer mediaPlayer) {
@@ -160,18 +171,63 @@ public class MusicFragment extends BaseFragment {
 
                     }
                 });
-    }
 
-    private void initMediaPlayer() {
-        DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
-        List<MusicModel> list = parentActivity.getData();
-        if (!list.isEmpty()) {
-            mMusicTitleTextView.setText(list.get(0).getName());
-            mMediaPlayer = MediaPlayer.create(getActivity(), Uri.parse(list.get(0).getPath()));
-        }else{
-            mMediaPlayer = MediaPlayer.create(getActivity(), R.raw.a);
-        }
-
+        mMediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mp, int what, int extra) {
+                Log.d(TAG, "OnError - Error code: " + what + " Extra code: " + extra);
+                switch (what) {
+                    case -1004:
+                        Log.d(TAG, "MEDIA_ERROR_IO");
+                        break;
+                    case -1007:
+                        Log.d(TAG, "MEDIA_ERROR_MALFORMED");
+                        break;
+                    case 200:
+                        Log.d(TAG, "MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK");
+                        break;
+                    case 100:
+                        Log.d(TAG, "MEDIA_ERROR_SERVER_DIED");
+                        break;
+                    case -110:
+                        Log.d(TAG, "MEDIA_ERROR_TIMED_OUT");
+                        break;
+                    case 1:
+                        Log.d(TAG, "MEDIA_ERROR_UNKNOWN");
+                        break;
+                    case -1010:
+                        Log.d(TAG, "MEDIA_ERROR_UNSUPPORTED");
+                        break;
+                }
+                switch (extra) {
+                    case 800:
+                        Log.d(TAG, "MEDIA_INFO_BAD_INTERLEAVING");
+                        break;
+                    case 702:
+                        Log.d(TAG, "MEDIA_INFO_BUFFERING_END");
+                        break;
+                    case 701:
+                        Log.d(TAG, "MEDIA_INFO_METADATA_UPDATE");
+                        break;
+                    case 802:
+                        Log.d(TAG, "MEDIA_INFO_METADATA_UPDATE");
+                        break;
+                    case 801:
+                        Log.d(TAG, "MEDIA_INFO_NOT_SEEKABLE");
+                        break;
+                    case 1:
+                        Log.d(TAG, "MEDIA_INFO_UNKNOWN");
+                        break;
+                    case 3:
+                        Log.d(TAG, "MEDIA_INFO_VIDEO_RENDERING_START");
+                        break;
+                    case 700:
+                        Log.d(TAG, "MEDIA_INFO_VIDEO_TRACK_LAGGING");
+                        break;
+                }
+                return false;
+            }
+        });
         seekBar.setMax(mMediaPlayer.getDuration());
         Log.d(TAG, "MediaPlayer audio session ID: " + mMediaPlayer.getAudioSessionId());
     }
@@ -197,14 +253,6 @@ public class MusicFragment extends BaseFragment {
         });
     }
 
-    //初始化歌曲
-    private void initSongs() {
-        DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
-        List<MusicModel> list = parentActivity.getData();
-        if (!list.isEmpty()) {
-            playMusic(list.get(0));
-        }
-    }
 
     private void spinAnimation() {
         //专辑旋转动画
@@ -239,6 +287,7 @@ public class MusicFragment extends BaseFragment {
         handler.removeCallbacks(updateThread);
         if (null != mMediaPlayer) {
             mMediaPlayer.pause();
+            mMediaPlayer.stop();
         }
 
         super.onDestroy();
@@ -280,7 +329,8 @@ public class MusicFragment extends BaseFragment {
                                                       byte[] bytes, int samplingRate) {
                         mVisualizerView.updateVisualizer(bytes); // 按照波形来画图
                         if (musicPlaying()) {
-                            writeWaveData(bytes);
+                            System.out.println(Arrays.toString(bytes));
+//                            writeWaveData(bytes);
                         }
                     }
 
@@ -355,15 +405,16 @@ public class MusicFragment extends BaseFragment {
                     }
                 });
     }
-    private byte[] getWaveHighLow(byte[] wave){
 
-        byte[] highLow=new byte[2];
-        highLow[0]=0;
-        highLow[1]=0;
-        int highCnt=0;
-        int lowCnt=0;
+    private byte[] getWaveHighLow(byte[] wave) {
+
+        byte[] highLow = new byte[2];
+        highLow[0] = 0;
+        highLow[1] = 0;
+        int highCnt = 0;
+        int lowCnt = 0;
         int direction = wave[0] > 0 ? -1 : 1;
-        int wavelen=wave.length - 1;
+        int wavelen = wave.length - 1;
         for (int i = 0; i < wavelen; i++) {
             if ((wave[i + 1] - wave[i]) * direction > 0) {
                 direction *= -1;
@@ -376,14 +427,16 @@ public class MusicFragment extends BaseFragment {
                 }
             }
         }
-        highLow[0]=Integer.valueOf(highCnt).byteValue();
-        highLow[1]=Integer.valueOf(lowCnt).byteValue();
+        highLow[0] = Integer.valueOf(highCnt).byteValue();
+        highLow[1] = Integer.valueOf(lowCnt).byteValue();
 
         return highLow;
     }
+
     @Override
     public void onPause() {
         super.onPause();
+        pause();
         if (getActivity().isFinishing() && mMediaPlayer != null) {
             handler.removeCallbacks(updateThread);
             mMediaPlayer.reset();// 重置
@@ -392,29 +445,36 @@ public class MusicFragment extends BaseFragment {
             mMediaPlayer = null;
         }
     }
+
     public void playMusic(MusicModel musicModel) {
         if (mMediaPlayer == null) {
             return;
         }
-        bleProcessing=false;
+        bleProcessing = false;
         try {
             curMusicModel = musicModel;
             mMusicTitleTextView.setText(curMusicModel.getName());
             mMediaPlayer.reset();// 重置
             mMediaPlayer.setDataSource(musicModel.getPath());
-            mMediaPlayer.prepare();
-            play();
-            seekBar.setMax(mMediaPlayer.getDuration());
+            mMediaPlayer.prepareAsync();
+            mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mediaPlayer) {
+                    play();
+                    seekBar.setMax(mMediaPlayer.getDuration());
+                }
+            });
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public boolean musicPlaying() {
-        boolean flag = false;
+        boolean flag;
         flag = null != mMediaPlayer && mMediaPlayer.isPlaying();
         return flag;
     }
+
     /**
      * 播放暂停
      */
@@ -429,15 +489,18 @@ public class MusicFragment extends BaseFragment {
             play();
         }
     }
-
+    private List<MusicModel> getParentListData(){
+        DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
+        List<MusicModel> list = parentActivity.getData();
+        return list;
+    }
 
     /**
      * 上一曲
      */
     @OnClick({R.id.iv_play_prev})
     public void onPlayPrevious() {
-        DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
-        List<MusicModel> list = parentActivity.getData();
+        List<MusicModel> list = getParentListData();
         int len = list.size();
         for (int i = 0; i < len; i++) {
             MusicModel musicModel = list.get(i);
@@ -458,8 +521,7 @@ public class MusicFragment extends BaseFragment {
      */
     @OnClick({R.id.iv_play_next})
     public void onPlayNext() {
-        DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
-        List<MusicModel> list = parentActivity.getData();
+        List<MusicModel> list = getParentListData();
         int len = list.size();
         for (int i = 0; i < len; i++) {
             MusicModel musicModel = list.get(i);
@@ -479,6 +541,7 @@ public class MusicFragment extends BaseFragment {
      * 播放
      */
     private void play() {
+
         mMediaPlayer.start();
         setVisualizerEnable(true);
         mPlayButton.setImageResource(R.mipmap.ic_play_pressed);
@@ -492,6 +555,9 @@ public class MusicFragment extends BaseFragment {
      * 暂停
      */
     private void pause() {
+        if (null == mMediaPlayer) {
+            return;
+        }
         mMediaPlayer.pause();
         mPlayButton.setImageResource(R.mipmap.ic_play_normal);
         if (operatingAnim != null) {

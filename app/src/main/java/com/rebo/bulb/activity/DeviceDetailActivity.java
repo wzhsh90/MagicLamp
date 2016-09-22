@@ -212,7 +212,7 @@ public class DeviceDetailActivity extends BaseActivity {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
             MusicModel musicModel = musicListAdapter.getMusicModel(position);
-            ((MusicFragment) tabMusic).playMusic(musicModel);
+            tabMusic.playMusic(musicModel);
             dialog.dismiss();
         }
     }
