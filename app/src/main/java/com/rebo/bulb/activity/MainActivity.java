@@ -51,16 +51,7 @@ import butterknife.OnItemClick;
 public class MainActivity extends BaseActivity {
 
     private static final String TAG = "magic_ble";
-
-//    private final class OnItemClickListener implements AdapterView.OnItemClickListener {
-//        @Override
-//        public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
-//            BluetoothDevice device = deviceListAdapter.getItem(position);
-//            if (null != device) {
-//                connectToDevice(device);
-//            }
-//        }
-//    }
+    private static final  byte[] lock=new byte[0];
 
     @BindView(R.id.lv_device)
     ListView listView;
@@ -158,10 +149,18 @@ public class MainActivity extends BaseActivity {
     protected void setListener() {
     }
 
-    private void onBleDeviceFound(final BluetoothDevice device) {
-//        device.getName() + "------mac:" + device.getAddress());
-        emptyRelativeLayout.setVisibility(View.GONE);
-        deviceListAdapter.addDevice(device);
+    private  void onBleDeviceFound(final BluetoothDevice device) {
+//        System.out.println( device.getName() + "------mac:" + device.getAddress());;
+        synchronized (lock){
+            this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    emptyRelativeLayout.setVisibility(View.GONE);
+                    deviceListAdapter.addDevice(device);
+                }
+            });
+        }
+
     }
 
     private void onBlueOn() {
@@ -210,7 +209,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private void connectToDevice(final BluetoothDevice device) {
-        stopScan();
+
         bleManager.closeBluetoothGatt();
         Toast.makeText(MainActivity.this, "正在连接...", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(MainActivity.this, DeviceDetailActivity.class);
@@ -218,6 +217,7 @@ public class MainActivity extends BaseActivity {
         bundle.putParcelable("device", device);
         intent.putExtras(bundle);
         MainActivity.this.startActivity(intent);
+        stopScan();
 
     }
 
