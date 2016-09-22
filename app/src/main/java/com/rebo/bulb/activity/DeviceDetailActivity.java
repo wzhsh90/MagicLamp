@@ -250,7 +250,8 @@ public class DeviceDetailActivity extends BaseActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         BaseApplication.getBleManager().closeBluetoothGatt();
+        super.onDestroy();
+
     }
 }

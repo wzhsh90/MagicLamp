@@ -11,6 +11,8 @@
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
         android:layout_marginLeft="10dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
         android:src="@mipmap/ic_bulb" />
 
     <TextView
@@ -21,6 +23,8 @@
         android:layout_marginLeft="6dp"
         android:layout_toRightOf="@+id/iv_device"
         android:text="标题"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
         android:textSize="16dp" />
 
     <ImageView
@@ -30,6 +34,8 @@
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
         android:layout_marginRight="16dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
         android:src="@drawable/arrow_right" />
 
     <TextView

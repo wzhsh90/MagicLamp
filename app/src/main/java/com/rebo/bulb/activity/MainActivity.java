@@ -15,7 +15,6 @@ import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.LinearInterpolator;
-import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -44,12 +43,24 @@ import java.util.Arrays;
 import java.util.List;
 
 import butterknife.BindView;
+import butterknife.ButterKnife;
 import butterknife.OnClick;
+import butterknife.OnItemClick;
 
 
 public class MainActivity extends BaseActivity {
 
     private static final String TAG = "magic_ble";
+
+//    private final class OnItemClickListener implements AdapterView.OnItemClickListener {
+//        @Override
+//        public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+//            BluetoothDevice device = deviceListAdapter.getItem(position);
+//            if (null != device) {
+//                connectToDevice(device);
+//            }
+//        }
+//    }
 
     @BindView(R.id.lv_device)
     ListView listView;
@@ -63,6 +74,14 @@ public class MainActivity extends BaseActivity {
     ImageView lampImageView;
     @BindView(R.id.tv_home_title)
     TextView titleTextView;
+
+    @OnItemClick(R.id.lv_device)
+    void onItemClick(int position) {
+        BluetoothDevice device = deviceListAdapter.getItem(position);
+        if (null != device) {
+            connectToDevice(device);
+        }
+    }
 
     private Animation operatingAnim;
     private DeviceListAdapter deviceListAdapter;
@@ -87,6 +106,7 @@ public class MainActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
         EventBusUtil.registerEvent(this);
         if (this.mToolbar != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
@@ -95,11 +115,9 @@ public class MainActivity extends BaseActivity {
         spinAnimation();
         initBleManager();
         initBluetooth();
-
     }
 
     private void spinAnimation() {
-        //专辑旋转动画
         operatingAnim = AnimationUtils.loadAnimation(this, R.anim.anim_rotate);
         LinearInterpolator linearInterpolator = new LinearInterpolator();
         operatingAnim.setInterpolator(linearInterpolator);
@@ -142,15 +160,8 @@ public class MainActivity extends BaseActivity {
 
     private void onBleDeviceFound(final BluetoothDevice device) {
 //        device.getName() + "------mac:" + device.getAddress());
-        this.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                emptyRelativeLayout.setVisibility(View.GONE);
-                deviceListAdapter.addDevice(device);
-                deviceListAdapter.notifyDataSetChanged();
-            }
-        });
-
+        emptyRelativeLayout.setVisibility(View.GONE);
+        deviceListAdapter.addDevice(device);
     }
 
     private void onBlueOn() {
@@ -199,7 +210,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private void connectToDevice(final BluetoothDevice device) {
-
+        stopScan();
         bleManager.closeBluetoothGatt();
         Toast.makeText(MainActivity.this, "正在连接...", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(MainActivity.this, DeviceDetailActivity.class);
@@ -207,32 +218,28 @@ public class MainActivity extends BaseActivity {
         bundle.putParcelable("device", device);
         intent.putExtras(bundle);
         MainActivity.this.startActivity(intent);
-        stopScan();
+
     }
 
-    private final class OnItemClickListener implements AdapterView.OnItemClickListener {
-        @Override
-        public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
-            BluetoothDevice device = deviceListAdapter.getItem(position);
-            if (null != device) {
-                connectToDevice(device);
-            }
-        }
-    }
 
     private void initBleManager() {
         bleManager = BaseApplication.getBleManager();
     }
 
     private void clearDeviceListData() {
-        deviceListAdapter.clearData();
-        deviceListAdapter.notifyDataSetChanged();
+        if(deviceListAdapter.getCount()>=1){
+            deviceListAdapter.clearData();
+
+        }
+
     }
 
     private void scanBleDevice() {
+
         PermissionUtil.getInstance(this).requestPermissions(new PermissionCallBack() {
             @Override
             public void onGranted() {
+                bleManager.closeBluetoothGatt();
                 clearDeviceListData();
                 startScanAnim();
                 bleManager.scanDevice(listScanCallback);
@@ -245,6 +252,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private void stopScan() {
+        bleManager.closeBluetoothGatt();
         stopScanAnim();
         if (bleManager.isInScanning()) {
             bleManager.stopScan(listScanCallback);
@@ -260,9 +268,9 @@ public class MainActivity extends BaseActivity {
     }
 
     private void initBluetooth() {
-        listView.setOnItemClickListener(new OnItemClickListener());
         deviceListAdapter = new DeviceListAdapter(MainActivity.this, R.layout.listview_item_device);
         listView.setAdapter(deviceListAdapter);
+//        listView.setOnItemClickListener(new OnItemClickListener());
         if (!bleManager.isSupportBle()) {
             emptyView.setText("该手机不支持BLE 4.0");
             return;

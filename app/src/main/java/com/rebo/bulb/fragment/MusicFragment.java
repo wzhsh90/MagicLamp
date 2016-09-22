@@ -347,7 +347,7 @@ public class MusicFragment extends BaseFragment {
 
                         }
                     }
-                }, maxCR / 2, true, true);
+                }, maxCR, true, true);
     }
 
     private void writeWaveData(byte[] data) {
@@ -381,13 +381,18 @@ public class MusicFragment extends BaseFragment {
         byte[] command = commandQueue.poll();
         if (command != null) {
             bleProcessing = true;
-            System.out.println(Arrays.toString(command));
-            write(command);
+//            System.out.println(Arrays.toString(command));
+            byte[] waveHighLow=getWaveHighLow(command);
+            write(waveHighLow);
         }
     }
 
     private void write(byte[] data) {
         if (!BaseApplication.getBleManager().isConnected()) {
+            return;
+        }
+        if(data[0]==0){
+            EventBusUtil.postEvent(AppConst.BLUE_MUSIC_WRITE_SUC, "");
             return;
         }
         BaseApplication.getBleManager().writeDevice(

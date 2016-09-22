@@ -39,10 +39,12 @@ public class DeviceListAdapter extends CommonAdapter<BluetoothDevice>{
         if(!mDatas.contains(device)&&!macMap.containsKey(device.getAddress())){
             macMap.put(device.getAddress(),"");
             mDatas.add(device);
+            this.notifyDataSetChanged();
         }
     }
     public void clearData(){
         this.mDatas.clear();
         macMap.clear();
+        this.notifyDataSetChanged();
     }
 }
