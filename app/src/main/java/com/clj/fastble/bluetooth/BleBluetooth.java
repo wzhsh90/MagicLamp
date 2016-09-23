@@ -126,6 +126,7 @@ public class BleBluetooth {
                 + " mac:" + device.getAddress()
                 + " autoConnect：" + autoConnect);
         addGattCallback(callback);
+        closeBluetoothGatt();
         return device.connectGatt(context, autoConnect, coreGattCallback);
     }
 
@@ -297,22 +298,27 @@ public class BleBluetooth {
                     + '\n' + "status: " + status
                     + '\n' + "newState: " + newState
                     + '\n' + "thread: " + Thread.currentThread().getId());
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                if (newState == BluetoothGatt.STATE_CONNECTED) {
+                    connectionState = STATE_CONNECTED;
+                    onConnectSuccess(gatt, status);
 
-            if (newState == BluetoothGatt.STATE_CONNECTED) {
-                connectionState = STATE_CONNECTED;
-                onConnectSuccess(gatt, status);
+                } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
+                    connectionState = STATE_DISCONNECTED;
+                    onConnectFailure(new ConnectException(gatt, status));
 
-            } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
-                connectionState = STATE_DISCONNECTED;
-                onConnectFailure(new ConnectException(gatt, status));
+                } else if (newState == BluetoothGatt.STATE_CONNECTING) {
+                    connectionState = STATE_CONNECTING;
+                }
+                for (BluetoothGattCallback call : callbackList) {
+                    call.onConnectionStateChange(gatt, status, newState);
+                }
 
-            } else if (newState == BluetoothGatt.STATE_CONNECTING) {
-                connectionState = STATE_CONNECTING;
+            } else {
+                // 防止出现status 133
+                closeBluetoothGatt();
             }
 
-            for (BluetoothGattCallback call : callbackList) {
-                call.onConnectionStateChange(gatt, status, newState);
-            }
         }
 
         @Override

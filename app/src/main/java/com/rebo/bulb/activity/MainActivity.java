@@ -51,7 +51,7 @@ import butterknife.OnItemClick;
 public class MainActivity extends BaseActivity {
 
     private static final String TAG = "magic_ble";
-    private static final  byte[] lock=new byte[0];
+    private static final byte[] lock = new byte[0];
 
     @BindView(R.id.lv_device)
     ListView listView;
@@ -149,17 +149,15 @@ public class MainActivity extends BaseActivity {
     protected void setListener() {
     }
 
-    private  void onBleDeviceFound(final BluetoothDevice device) {
+    private void onBleDeviceFound(final BluetoothDevice device) {
 //        System.out.println( device.getName() + "------mac:" + device.getAddress());;
-        synchronized (lock){
-            this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    emptyRelativeLayout.setVisibility(View.GONE);
-                    deviceListAdapter.addDevice(device);
-                }
-            });
-        }
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                emptyRelativeLayout.setVisibility(View.GONE);
+                deviceListAdapter.addDevice(device);
+            }
+        });
 
     }
 
@@ -227,7 +225,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private void clearDeviceListData() {
-        if(deviceListAdapter.getCount()>=1){
+        if (deviceListAdapter.getCount() >= 1) {
             deviceListAdapter.clearData();
 
         }

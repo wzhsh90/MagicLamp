@@ -29,6 +29,7 @@ import com.rebo.bulb.AppConst;
 import com.rebo.bulb.BaseApplication;
 import com.rebo.bulb.R;
 import com.rebo.bulb.activity.DeviceDetailActivity;
+import com.rebo.bulb.ble.BleCommand;
 import com.rebo.bulb.ble.BleConst;
 import com.rebo.bulb.model.MusicModel;
 import com.rebo.bulb.utils.EventBusUtil;
@@ -395,11 +396,12 @@ public class MusicFragment extends BaseFragment {
             EventBusUtil.postEvent(AppConst.BLUE_MUSIC_WRITE_SUC, "");
             return;
         }
+        byte[] allData=BleCommand.getAllData(BleCommand.getHead(0, 0), BleCommand.musicStartBody(data[0]));
         BaseApplication.getBleManager().writeDevice(
                 BleConst.RX_SERVICE_UUID,
                 BleConst.RX_WRITE_UUID,
                 BleConst.UUID_CLIENT_CHARACTERISTIC_CONFIG_DESCRIPTOR,
-                data,
+                allData,
                 new BleCharacterCallback() {
                     @Override
                     public void onSuccess(BluetoothGattCharacteristic characteristic) {

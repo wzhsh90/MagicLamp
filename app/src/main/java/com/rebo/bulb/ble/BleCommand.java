@@ -25,6 +25,9 @@ public class BleCommand {
         atomicInteger.getAndIncrement();
         int val=atomicInteger.get();
         int realVal=val%256;
+        if(val>=256){
+            atomicInteger.set(256);
+        }
         return Integer.valueOf(realVal).byteValue();
     }
 
@@ -44,6 +47,10 @@ public class BleCommand {
         return result;
     }
     public static byte[] lockOrUnlockBody(boolean lock) {
+        return lockOrUnlockBody(lock,100);
+    }
+
+    public static byte[] lockOrUnlockBody(boolean lock,int Intensity) {
         byte[] body = new byte[5];
         body[0] = 0x04;
         if (!lock) {
@@ -56,14 +63,31 @@ public class BleCommand {
         return body;
     }
 
-    public static byte[] colorBody(int Intensity) {
+    public static byte[] colorBody(byte[] color,int Intensity) {
+        byte[] body = new byte[7];
+        body[0] = 0x02;
+        body[1] = color[0];
+        body[2] = color[1];
+        body[3] = color[2];
+        body[4] = (byte)(Intensity & 0xFF);
+        body[6] = 0x0A;
+        return  body;
+    }
+    public static byte[] musicStartBody(byte crestNum) {
         byte[] body = new byte[5];
-        body[0] = 0x04;
+        body[0] = 0x03;
         body[1] = 0x01;
-        body[2] = 0x64;
+        body[2] = crestNum;
+        body[3] = 0x0A;
+        return  body;
+    }
+    public static byte[] musicEndBody(byte crestNum) {
+        byte[] body = new byte[5];
+        body[0] = 0x03;
+        body[1] = 0x00;
+        body[2] = crestNum;
         body[4] = 0x0A;
         return  body;
-
     }
     public static byte[] getAllData(byte[] head,byte[] body){
         int headlen=head.length-1;

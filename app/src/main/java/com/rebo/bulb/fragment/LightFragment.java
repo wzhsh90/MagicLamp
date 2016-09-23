@@ -19,6 +19,7 @@ import com.rebo.bulb.BaseApplication;
 import com.rebo.bulb.R;
 import com.rebo.bulb.ble.BleCommand;
 import com.rebo.bulb.ble.BleConst;
+import com.rebo.bulb.ble.Utils;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -58,7 +59,7 @@ public class LightFragment extends BaseFragment {
             @Override
             public void onColorSelected(int color) {
                 Log.i("LightFragment", "------>color:" + color);
-                writeColor(color);
+                writeColor(color,opacityBar.getOpacity());
             }
         });
         opacityBar.setOnTouchListener(new View.OnTouchListener() {
@@ -66,7 +67,7 @@ public class LightFragment extends BaseFragment {
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 if (MotionEvent.ACTION_UP == motionEvent.getAction()) {
                     Log.i("LightFragment", "------>opacity:" + opacityBar.getOpacity());
-                    writeOpacity(opacityBar.getOpacity());
+                    writeOpacity(colorPicker.getColor(),opacityBar.getOpacity());
                     return true;
                 }
                 return false;
@@ -125,15 +126,17 @@ public class LightFragment extends BaseFragment {
 //        write("1");
     }
 
-    private void writeColor(int color) {
+    private void writeColor(int color,int opacity) {
 
 //        write(String.valueOf(color));
-        write(BleCommand.getAllData(BleCommand.getHead(0, 0), BleCommand.colorBody(0)));
+        byte[] colorByte= Utils.parseHexStr2Byte(Integer.toHexString(color));
+        write(BleCommand.getAllData(BleCommand.getHead(0, 0), BleCommand.colorBody(colorByte,opacity)));
     }
 
-    private void writeOpacity(int opacity) {
+    private void writeOpacity(int color,int opacity) {
 //        write(String.valueOf(opacity));
-        write(BleCommand.getAllData(BleCommand.getHead(0, 0), BleCommand.colorBody(opacity)));
+        byte[] colorByte= Utils.parseHexStr2Byte(Integer.toHexString(color));
+        write(BleCommand.getAllData(BleCommand.getHead(0, 0), BleCommand.colorBody(colorByte,opacity)));
     }
 
     private void write(final byte[] data) {
