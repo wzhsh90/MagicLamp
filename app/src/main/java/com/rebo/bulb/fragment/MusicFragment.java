@@ -68,7 +68,8 @@ public class MusicFragment extends BaseFragment {
     private TextView mMusicTitleTextView;
     private Animation operatingAnim;
     private final ConcurrentLinkedQueue<byte[]> commandQueue = new ConcurrentLinkedQueue<byte[]>();
-    private boolean bleProcessing;
+    private volatile boolean bleProcessing;
+    private static final byte[] lock=new byte[0];
 
     @BindView(R.id.iv_dvd)
     ImageView dvdImageView;
@@ -291,11 +292,7 @@ public class MusicFragment extends BaseFragment {
         EventBusUtil.unRegisterEvent(this);
         mVisualizerView.stop();
         handler.removeCallbacks(updateThread);
-        if (null != mMediaPlayer) {
-            mMediaPlayer.pause();
-            mMediaPlayer.stop();
-        }
-
+        pauseAndStop();
         super.onDestroy();
     }
 
@@ -352,13 +349,19 @@ public class MusicFragment extends BaseFragment {
     }
 
     private void writeWaveData(byte[] data) {
-        int len = data.length;
-        for (int i = 0; i < len; i += SPLIT_CNT) {
-            byte[] splitData = Arrays.copyOfRange(data, i, Math.min(i + SPLIT_CNT, len));
-            commandQueue.add(splitData);
+        if (!BaseApplication.getBleManager().isConnected()) {
+            return;
         }
-        if (!bleProcessing) {
-            processCommands();
+        synchronized (lock){
+            int len = data.length;
+            for (int i = 0; i < len; i += SPLIT_CNT) {
+                byte[] splitData = Arrays.copyOfRange(data, i, Math.min(i + SPLIT_CNT, len));
+                commandQueue.add(splitData);
+            }
+            Log.d(TAG, "writeWaveData: bleProcessing: "+bleProcessing);
+            if (!bleProcessing) {
+                processCommands();
+            }
         }
     }
 
@@ -575,6 +578,13 @@ public class MusicFragment extends BaseFragment {
         if (operatingAnim != null) {
             dvdImageView.clearAnimation();
         }
+    }
+    public void pauseAndStop(){
+        if (null != mMediaPlayer) {
+            mMediaPlayer.pause();
+            mMediaPlayer.stop();
+        }
+
     }
 
 }

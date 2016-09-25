@@ -18,6 +18,7 @@ import android.widget.AdapterView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RadioButton;
+import android.widget.Toast;
 
 import com.clj.fastble.bluetooth.BleGattCallback;
 import com.clj.fastble.exception.BleException;
@@ -31,6 +32,11 @@ import com.rebo.bulb.model.MusicModel;
 import com.rebo.bulb.permission.PermissionCallBack;
 import com.rebo.bulb.permission.PermissionUtil;
 import com.rebo.bulb.utils.EventBusUtil;
+
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,15 +66,39 @@ public class DeviceDetailActivity extends BaseActivity {
     private BluetoothDevice device;
     BottomSheetDialog dialog;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_detail);
         this.setNavigationTitle("设备名称");
+        EventBusUtil.registerEvent(this);
         setSelect(TAB_LIGHT);
         Bundle bundle = getIntent().getExtras();
         device = (BluetoothDevice) bundle.get("device");
         connectToDevice(device);
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void handlerEventBus(JSONObject jsonObject) {
+        if (null != jsonObject) {
+            String code;
+            try {
+                code = jsonObject.getString("code");
+                switch (code) {
+                    case AppConst.BLUE_CONN_FAIL:
+                        bleConnFail(jsonObject.getString("content"));
+                        break;
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void bleConnFail(String errMsg) {
+        Toast.makeText(DeviceDetailActivity.this, errMsg, Toast.LENGTH_LONG).show();
+        finish();
     }
 
     private void connectToDevice(final BluetoothDevice device) {
@@ -88,7 +118,7 @@ public class DeviceDetailActivity extends BaseActivity {
             public void onConnectFailure(BleException exception) {
                 Log.i(TAG, "连接失败或连接中断：" + '\n' + exception.toString());
                 EventBusUtil.postEvent(AppConst.BLUE_CONN_FAIL, "连接失败或连接中断");
-                finish();
+
             }
         });
     }
@@ -103,10 +133,15 @@ public class DeviceDetailActivity extends BaseActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        boolean res = super.onOptionsItemSelected(item);
         if (item.getItemId() == R.id.action_music_list) {
             showMusicList();
+        } else if (item.getItemId() == android.R.id.home) {
+            BaseApplication.getBleManager().closeBluetoothGatt();
+            if(null!=tabMusic){
+                tabMusic.pauseAndStop();
+            }
         }
+        boolean res = super.onOptionsItemSelected(item);
         return res;
     }
 
@@ -137,14 +172,14 @@ public class DeviceDetailActivity extends BaseActivity {
             case R.id.tab_music:
                 PermissionUtil.getInstance(this).requestPermissions(new PermissionCallBack() {
                     @Override
-                   public void onGranted() {
+                    public void onGranted() {
                         setSelect(TAB_MUSIC);
                     }
 
                     @Override
                     public void onDenied(List<String> permissions) {
                     }
-                }, Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.RECORD_AUDIO);
+                }, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO);
                 break;
         }
     }
@@ -189,11 +224,11 @@ public class DeviceDetailActivity extends BaseActivity {
                     default:
                         break;
                 }
-                try{
+                try {
                     transaction.commitAllowingStateLoss();
                     invalidateOptionsMenu();
 
-                }catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
 
@@ -251,6 +286,7 @@ public class DeviceDetailActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         BaseApplication.getBleManager().closeBluetoothGatt();
+        EventBusUtil.unRegisterEvent(this);
         super.onDestroy();
 
     }

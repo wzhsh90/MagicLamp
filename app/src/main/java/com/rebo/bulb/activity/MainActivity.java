@@ -4,7 +4,6 @@ import android.Manifest;
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
@@ -22,8 +21,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.clj.fastble.BleManager;
-import com.clj.fastble.conn.BleCharacterCallback;
-import com.clj.fastble.exception.BleException;
 import com.clj.fastble.scan.ListScanCallback;
 import com.rebo.bulb.AppConst;
 import com.rebo.bulb.BaseApplication;
@@ -39,7 +36,6 @@ import org.greenrobot.eventbus.ThreadMode;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Arrays;
 import java.util.List;
 
 import butterknife.BindView;
@@ -127,9 +123,6 @@ public class MainActivity extends BaseActivity {
                     case AppConst.BLUE_OFF:
                         onBlueOff();
                         break;
-                    case AppConst.BLUE_CONN_FAIL:
-                        bleConnFail(jsonObject.getString("content"));
-                        break;
                     case AppConst.BLUE_STOP_SCAN:
                         stopTimeout();
                         break;
@@ -183,29 +176,6 @@ public class MainActivity extends BaseActivity {
         }
     }
 
-    private void bleConnFail(String errMsg) {
-        Toast.makeText(MainActivity.this, errMsg, Toast.LENGTH_LONG).show();
-    }
-
-    private void notifyChar() {
-        bleManager.notifyDevice(
-                BleConst.RX_SERVICE_UUID.toString(),
-                BleConst.TX_READ_UUID.toString(),
-                BleConst.UUID_CLIENT_CHARACTERISTIC_CONFIG_DESCRIPTOR,
-                new BleCharacterCallback() {
-                    @Override
-                    public void onSuccess(BluetoothGattCharacteristic characteristic) {
-                        Log.d(TAG, "特征值Notify通知数据回调： " + '\n' + Arrays.toString(characteristic.getValue()));
-                    }
-
-                    @Override
-                    public void onFailure(BleException exception) {
-                        Log.e(TAG, "特征值Notify通知回调失败: " + '\n' + exception.toString());
-//                        bleManager.handleException(exception);
-                    }
-                });
-    }
-
     private void connectToDevice(final BluetoothDevice device) {
 
         bleManager.closeBluetoothGatt();
@@ -239,6 +209,7 @@ public class MainActivity extends BaseActivity {
             public void onGranted() {
                 bleManager.closeBluetoothGatt();
                 clearDeviceListData();
+                bleManager.stopScan(listScanCallback);
                 startScanAnim();
                 bleManager.scanDevice(listScanCallback);
             }
