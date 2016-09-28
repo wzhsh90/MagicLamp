@@ -48,6 +48,10 @@ public abstract class PeriodScanCallback implements BluetoothAdapter.LeScanCallb
         return bleBluetooth;
     }
 
+    public void onStartBleScanCallBack(boolean result){
+
+    }
+
     public PeriodScanCallback setBleBluetooth(BleBluetooth bluetooth) {
         this.bleBluetooth = bluetooth;
         return this;

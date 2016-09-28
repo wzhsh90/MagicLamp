@@ -69,7 +69,28 @@ public class MusicFragment extends BaseFragment {
     private Animation operatingAnim;
     private final ConcurrentLinkedQueue<byte[]> commandQueue = new ConcurrentLinkedQueue<byte[]>();
     private volatile boolean bleProcessing;
-    private static final byte[] lock=new byte[0];
+    private static final byte[] lock = new byte[0];
+    protected Handler handlerWrite = new Handler();
+
+    private BleCharacterCallback bleWriteBack=new BleCharacterCallback() {
+        @Override
+        public void onSuccess(BluetoothGattCharacteristic characteristic) {
+            synchronized (lock){
+                Log.d(TAG, "写特征值成功: " + '\n' + Arrays.toString(characteristic.getValue()));
+                EventBusUtil.postEvent(AppConst.BLUE_MUSIC_WRITE_SUC, "");
+            }
+        }
+
+        @Override
+        public void onFailure(BleException exception) {
+            synchronized (lock){
+                EventBusUtil.postEvent(AppConst.BLUE_MUSIC_WRITE_SUC, "");
+                Log.e(TAG, "写读特征值失败: " + '\n' + exception.toString());
+                BaseApplication.getBleManager().handleException(exception);
+            }
+
+        }
+    };
 
     @BindView(R.id.iv_dvd)
     ImageView dvdImageView;
@@ -154,13 +175,17 @@ public class MusicFragment extends BaseFragment {
     }
 
     private void initMediaPlayer() {
-        try{
+        try {
             DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
             List<MusicModel> list = parentActivity.getData();
             if (!list.isEmpty()) {
-                curMusicModel=list.get(0);
+                curMusicModel = list.get(0);
                 mMusicTitleTextView.setText(curMusicModel.getName());
                 mMediaPlayer = MediaPlayer.create(getActivity(), Uri.parse(curMusicModel.getPath()));
+                if(null==mMediaPlayer){
+                    mMusicTitleTextView.setText("默认歌曲");
+                    mMediaPlayer = MediaPlayer.create(getActivity(), R.raw.a);
+                }
             } else {
                 mMediaPlayer = MediaPlayer.create(getActivity(), R.raw.a);
             }
@@ -171,6 +196,7 @@ public class MusicFragment extends BaseFragment {
                             getActivity().getWindow().clearFlags(
                                     WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                             getActivity().setVolumeControlStream(AudioManager.STREAM_SYSTEM);
+                            writeMusicEnd();
 
                         }
                     });
@@ -233,7 +259,7 @@ public class MusicFragment extends BaseFragment {
             });
             seekBar.setMax(mMediaPlayer.getDuration());
             Log.d(TAG, "MediaPlayer audio session ID: " + mMediaPlayer.getAudioSessionId());
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -348,20 +374,24 @@ public class MusicFragment extends BaseFragment {
                 }, maxCR, true, true);
     }
 
+    private void writeMusicEnd(){
+        commandQueue.clear();
+        bleProcessing = false;
+        byte[] allData = BleCommand.getAllData(BleCommand.getHead(0, 0), BleCommand.musicEndBody());
+        writeWaveData(allData);
+    }
     private void writeWaveData(byte[] data) {
         if (!BaseApplication.getBleManager().isConnected()) {
             return;
         }
-        synchronized (lock){
-            int len = data.length;
-            for (int i = 0; i < len; i += SPLIT_CNT) {
-                byte[] splitData = Arrays.copyOfRange(data, i, Math.min(i + SPLIT_CNT, len));
-                commandQueue.add(splitData);
-            }
-            Log.d(TAG, "writeWaveData: bleProcessing: "+bleProcessing);
-            if (!bleProcessing) {
-                processCommands();
-            }
+        int len = data.length;
+        for (int i = 0; i < len; i += SPLIT_CNT) {
+            byte[] splitData = Arrays.copyOfRange(data, i, Math.min(i + SPLIT_CNT, len));
+            commandQueue.add(splitData);
+        }
+        Log.d(TAG, "writeWaveData: bleProcessing: " + bleProcessing);
+        if (!bleProcessing) {
+            processCommands();
         }
     }
 
@@ -386,39 +416,33 @@ public class MusicFragment extends BaseFragment {
         if (command != null) {
             bleProcessing = true;
 //            System.out.println(Arrays.toString(command));
-            byte[] waveHighLow=getWaveHighLow(command);
-            write(waveHighLow);
+            final byte[] waveHighLow = getWaveHighLow(command);
+            handlerWrite.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    write(waveHighLow);
+                }
+            },100);
+
         }
     }
 
     private void write(byte[] data) {
         if (!BaseApplication.getBleManager().isConnected()) {
-            return;
-        }
-        if(data[0]==0){
             EventBusUtil.postEvent(AppConst.BLUE_MUSIC_WRITE_SUC, "");
             return;
         }
-        byte[] allData=BleCommand.getAllData(BleCommand.getHead(0, 0), BleCommand.musicStartBody(data[0]));
+        if (data[0] == 0) {
+            EventBusUtil.postEvent(AppConst.BLUE_MUSIC_WRITE_SUC, "");
+            return;
+        }
+        byte[] allData = BleCommand.getAllData(BleCommand.getHead(0, 0), BleCommand.musicStartBody(data[0]));
         BaseApplication.getBleManager().writeDevice(
                 BleConst.RX_SERVICE_UUID,
                 BleConst.RX_WRITE_UUID,
                 BleConst.UUID_CLIENT_CHARACTERISTIC_CONFIG_DESCRIPTOR,
-                allData,
-                new BleCharacterCallback() {
-                    @Override
-                    public void onSuccess(BluetoothGattCharacteristic characteristic) {
-                        EventBusUtil.postEvent(AppConst.BLUE_MUSIC_WRITE_SUC, "");
-//                        Log.d(TAG, "写特征值成功: " + '\n' + Arrays.toString(characteristic.getValue()));
-                    }
-
-                    @Override
-                    public void onFailure(BleException exception) {
-                        EventBusUtil.postEvent(AppConst.BLUE_MUSIC_WRITE_SUC, "");
-//                        Log.e(TAG, "写读特征值失败: " + '\n' + exception.toString());
-//                        bleManager.handleException(exception);
-                    }
-                });
+                allData,bleWriteBack
+        );
     }
 
     private byte[] getWaveHighLow(byte[] wave) {
@@ -435,10 +459,10 @@ public class MusicFragment extends BaseFragment {
                 direction *= -1;
                 if (direction == 1) {
                     highCnt++;
-                    System.out.println("(" + i + "," + wave[i] + ")" + "波峰");
+                    Log.d(TAG, "(" + i + "," + wave[i] + ")" + "波峰");
                 } else {
                     lowCnt++;
-                    System.out.println("(" + i + "," + wave[i] + ")" + "波谷");
+                    Log.d(TAG,"(" + i + "," + wave[i] + ")" + "波谷");
                 }
             }
         }
@@ -504,7 +528,8 @@ public class MusicFragment extends BaseFragment {
             play();
         }
     }
-    private List<MusicModel> getParentListData(){
+
+    private List<MusicModel> getParentListData() {
         DeviceDetailActivity parentActivity = (DeviceDetailActivity) getActivity();
         List<MusicModel> list = parentActivity.getData();
         return list;
@@ -579,7 +604,8 @@ public class MusicFragment extends BaseFragment {
             dvdImageView.clearAnimation();
         }
     }
-    public void pauseAndStop(){
+
+    public void pauseAndStop() {
         if (null != mMediaPlayer) {
             mMediaPlayer.pause();
             mMediaPlayer.stop();

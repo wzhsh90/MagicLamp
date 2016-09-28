@@ -91,7 +91,7 @@ public class BleBluetooth {
 
 
     public boolean startLeScan(BluetoothAdapter.LeScanCallback callback) {
-        boolean suc = bluetoothAdapter.startLeScan(callback);
+        boolean suc = bluetoothAdapter.startLeScan(null,callback);
         if (suc) {
             connectionState = STATE_SCANNING;
         }
@@ -100,12 +100,13 @@ public class BleBluetooth {
 
     public boolean startLeScan(PeriodScanCallback callback) {
         callback.setBleBluetooth(this).notifyScanStarted();
-        boolean suc = bluetoothAdapter.startLeScan(callback);
+        boolean suc = bluetoothAdapter.startLeScan(null,callback);
         if (suc) {
             connectionState = STATE_SCANNING;
         } else {
             callback.removeHandlerMsg();
         }
+        callback.onStartBleScanCallBack(suc);
         return suc;
     }
 

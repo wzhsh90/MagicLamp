@@ -1,6 +1,7 @@
 package com.rebo.bulb.ble;
 
 import com.google.common.primitives.Bytes;
+import com.google.common.primitives.UnsignedBytes;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,7 +36,7 @@ public class BleCommand {
         return data[2];
     }
     public static void setCurrentSeq(byte[] data,int seq){
-         data[2]=Integer.valueOf(seq).byteValue();
+        data[2]=Integer.valueOf(seq).byteValue();
     }
     private static byte[] intToByteArray(int i) {
         byte[] result = new byte[4];
@@ -69,7 +70,7 @@ public class BleCommand {
         body[1] = color[0];
         body[2] = color[1];
         body[3] = color[2];
-        body[4] = (byte)(Intensity & 0xFF);
+        body[4] = (byte)Intensity;
         body[6] = 0x0A;
         return  body;
     }
@@ -78,22 +79,44 @@ public class BleCommand {
         body[0] = 0x03;
         body[1] = 0x01;
         body[2] = crestNum;
-        body[3] = 0x0A;
+        body[4] = 0x0A;
         return  body;
     }
-    public static byte[] musicEndBody(byte crestNum) {
-        byte[] body = new byte[5];
+    public static byte[] musicEndBody() {
+        byte[] body = new byte[4];
         body[0] = 0x03;
         body[1] = 0x00;
-        body[2] = crestNum;
-        body[4] = 0x0A;
+        body[3] = 0x0A;
         return  body;
     }
     public static byte[] getAllData(byte[] head,byte[] body){
         int headlen=head.length-1;
         int bodyLen=body.length-2;
-        head[headlen]=(byte)body.length;
-        body[bodyLen]= (byte)(head[0]^body[bodyLen-1]);
+        head[headlen]=(byte)(body.length-2);
+        body[bodyLen]= getCheckSum(head,body,bodyLen);
         return Bytes.concat(head,body);
+    }
+    public int getUnsignedByte (byte data){      //将data字节型数据转换为0~255 (0xFF 即BYTE)。
+        return data&0x0FF ;
+    }
+    public int getUnsignedByte (short data){      //将data字节型数据转换为0~65535 (0xFFFF 即 WORD)。
+        return data&0x0FFFF ;
+    }
+    public long getUnsignedIntt (int data){     //将int数据转换为0~4294967295 (0xFFFFFFFF即DWORD)。
+        return data&0x0FFFFFFFF ;
+    }
+
+    private static byte getCheckSum(byte[] head,byte[] body,int bodyLen){
+        int checkSum=UnsignedBytes.toInt(head[0]);
+        for(int i=1;i<head.length;i++){
+            checkSum=checkSum^UnsignedBytes.toInt(head[i]);
+        }
+        for(int j=0;j<bodyLen;j++){
+            checkSum=checkSum^UnsignedBytes.toInt(body[j]);
+        }
+        return (byte) checkSum;
+
+
+
     }
 }
