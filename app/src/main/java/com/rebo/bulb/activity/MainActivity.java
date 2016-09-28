@@ -27,6 +27,7 @@ import com.rebo.bulb.BaseApplication;
 import com.rebo.bulb.R;
 import com.rebo.bulb.adapter.DeviceListAdapter;
 import com.rebo.bulb.ble.BleConst;
+import com.rebo.bulb.ble.BlueDeviceWrapper;
 import com.rebo.bulb.permission.PermissionCallBack;
 import com.rebo.bulb.permission.PermissionUtil;
 import com.rebo.bulb.utils.EventBusUtil;
@@ -64,7 +65,7 @@ public class MainActivity extends BaseActivity {
 
     @OnItemClick(R.id.lv_device)
     void onItemClick(int position) {
-        BluetoothDevice device = deviceListAdapter.getItem(position);
+        BluetoothDevice device = deviceListAdapter.getItem(position).getBluetoothDevice();
         if (null != device) {
             connectToDevice(device);
         }
@@ -75,8 +76,8 @@ public class MainActivity extends BaseActivity {
     private BleManager bleManager;
     private ListScanCallback listScanCallback = new ListScanCallback(BleConst.SCAN_TIME_OUT) {
         @Override
-        public void onDeviceFound(BluetoothDevice device) {
-            onBleDeviceFound(device);
+        public void onDeviceFound(BluetoothDevice device,byte[] scanRecord) {
+            onBleDeviceFound(device,scanRecord);
         }
 
         @Override
@@ -142,13 +143,13 @@ public class MainActivity extends BaseActivity {
     protected void setListener() {
     }
 
-    private void onBleDeviceFound(final BluetoothDevice device) {
+    private void onBleDeviceFound(final BluetoothDevice device,final byte[] scanRecord) {
 //        System.out.println( device.getName() + "------mac:" + device.getAddress());;
         this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 emptyRelativeLayout.setVisibility(View.GONE);
-                deviceListAdapter.addDevice(device);
+                deviceListAdapter.addDevice(new BlueDeviceWrapper(device,scanRecord));
             }
         });
 

@@ -25,11 +25,11 @@ public abstract class ListScanCallback extends PeriodScanCallback {
         if (device == null) {
             return;
         }
-        onDeviceFound(device);
+        onDeviceFound(device,scanRecord);
     }
     @Override
     public void onScanTimeout() {
     }
 
-    public abstract void onDeviceFound(BluetoothDevice device);
+    public abstract void onDeviceFound(BluetoothDevice device,byte[] scanRecord);
 }
